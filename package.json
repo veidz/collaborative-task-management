@@ -2,10 +2,7 @@
   "name": "collaborative-task-management",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "type": "module",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
