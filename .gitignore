@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Production builds
+dist
+build
+.next
+out
+
+# Environment
+.env
+.env*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode
+.idea
+*.sublime-*
+
+# Turbo
+.turbo
+
+# Docker
+docker-compose.override.yml
