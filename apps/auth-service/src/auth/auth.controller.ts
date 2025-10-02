@@ -6,6 +6,8 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Headers,
+  UnauthorizedException,
 } from '@nestjs/common'
 import {
   ApiTags,
@@ -21,11 +23,11 @@ import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
 import { RefreshResponseDto } from './dto/refresh-response.dto'
 import { ProfileResponseDto } from './dto/profile-response.dto'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
 import {
   CurrentUser,
   CurrentUserData,
 } from './decorators/current-user.decorator'
-import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -95,7 +97,7 @@ export class AuthController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiOperation({ summary: 'Get current user profile (JWT)' })
   @ApiResponse({
     status: 200,
     description: 'Profile retrieved successfully',
@@ -109,9 +111,33 @@ export class AuthController {
     status: 404,
     description: 'User not found',
   })
-  async getProfile(
+  async getProfileWithJwt(
     @CurrentUser() user: CurrentUserData,
   ): Promise<ProfileResponseDto> {
     return this.authService.getProfile(user.id)
+  }
+
+  @Get('profile')
+  @ApiOperation({ summary: 'Get user profile (Internal - Gateway only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile retrieved successfully',
+    type: ProfileResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getProfileInternal(
+    @Headers('x-user-id') userId: string,
+  ): Promise<ProfileResponseDto> {
+    if (!userId) {
+      throw new UnauthorizedException('User ID header required')
+    }
+    return this.authService.getProfile(userId)
   }
 }

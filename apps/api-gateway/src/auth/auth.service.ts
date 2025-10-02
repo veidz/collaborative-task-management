@@ -8,6 +8,7 @@ import { RefreshDto } from './dto/refresh.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
 import { RefreshResponseDto } from './dto/refresh-response.dto'
+import { ProfileResponseDto } from './dto/profile-response.dto'
 
 @Injectable()
 export class AuthService {
@@ -88,6 +89,33 @@ export class AuthService {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error'
       this.logger.error(`Token refresh failed - ${errorMessage}`)
+      throw error
+    }
+  }
+
+  async getProfile(userId: string): Promise<ProfileResponseDto> {
+    this.logger.log(`Proxying profile request for user: ${userId}`)
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<ProfileResponseDto>(
+          `${this.authServiceUrl}/auth/profile`,
+          {
+            headers: {
+              'X-User-Id': userId,
+            },
+          },
+        ),
+      )
+
+      this.logger.log(`Profile retrieved for user: ${userId}`)
+      return response.data
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+      this.logger.error(
+        `Profile retrieval failed for user: ${userId} - ${errorMessage}`,
+      )
       throw error
     }
   }

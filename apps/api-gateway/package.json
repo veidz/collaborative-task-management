@@ -18,8 +18,12 @@
     "@nestjs/swagger": "^7.4.2",
     "@nestjs/config": "^3.2.3",
     "@nestjs/axios": "^3.1.2",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/passport": "^10.0.3",
     "axios": "^1.7.9",
     "nestjs-pino": "^4.1.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
     "pino": "^9.4.0",
     "pino-http": "^10.3.0",
     "pino-pretty": "^13.0.0",
@@ -34,6 +38,7 @@
     "@packages/tsconfig": "workspace:*",
     "@types/express": "^5.0.0",
     "@types/node": "^20.16.10",
+    "@types/passport-jwt": "^4.0.1",
     "ts-node": "^10.9.2",
     "typescript": "5.6.2"
   }

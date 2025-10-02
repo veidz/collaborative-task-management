@@ -1,12 +1,19 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   HttpCode,
   HttpStatus,
   HttpException,
+  UseGuards,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { AxiosError } from 'axios'
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
@@ -15,6 +22,12 @@ import { RefreshDto } from './dto/refresh.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
 import { RefreshResponseDto } from './dto/refresh-response.dto'
+import { ProfileResponseDto } from './dto/profile-response.dto'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
+import {
+  CurrentUser,
+  CurrentUserData,
+} from './decorators/current-user.decorator'
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -88,6 +101,33 @@ export class AuthController {
   async refresh(@Body() refreshDto: RefreshDto): Promise<RefreshResponseDto> {
     try {
       return await this.authService.refresh(refreshDto)
+    } catch (error) {
+      this.handleError(error)
+    }
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile retrieved successfully',
+    type: ProfileResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getProfile(
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<ProfileResponseDto> {
+    try {
+      return await this.authService.getProfile(user.id)
     } catch (error) {
       this.handleError(error)
     }
