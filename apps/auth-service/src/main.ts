@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { Logger } from 'nestjs-pino'
 import { AppModule } from './app.module'
 
@@ -17,11 +17,9 @@ async function bootstrap() {
     }),
   )
 
-  app.enableCors()
-
   const config = new DocumentBuilder()
     .setTitle('Auth Service API')
-    .setDescription('Authentication and authorization service')
+    .setDescription('Authentication and Authorization service')
     .setVersion('1.0')
     .addBearerAuth()
     .build()
@@ -33,8 +31,8 @@ async function bootstrap() {
   await app.listen(port)
 
   const logger = app.get(Logger)
-  logger.log(`Auth Service is running on: http://localhost:${port}`)
-  logger.log(`Swagger documentation: http://localhost:${port}/api/docs`)
+  logger.log(`🚀 Auth Service running on http://localhost:${port}`)
+  logger.log(`📚 Swagger docs available at http://localhost:${port}/api/docs`)
 }
 
 bootstrap()

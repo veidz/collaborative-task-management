@@ -6,7 +6,13 @@
     "baseUrl": ".",
     "declaration": true,
     "declarationMap": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "resolvePackageJsonExports": false,
+    "paths": {
+      "@packages/types": ["../../packages/types/dist"],
+      "@packages/utils": ["../../packages/utils/dist"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "migrations", "../../packages/*/src/**/*"]

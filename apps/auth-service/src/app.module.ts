@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { LoggerModule } from '@packages/logger'
+import { LoggerModule } from './common/logger'
 import { typeOrmConfig } from './config/typeorm.config'
 import { HealthController } from './health/health.controller'
 
@@ -11,8 +11,8 @@ import { HealthController } from './health/health.controller'
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot(typeOrmConfig),
     LoggerModule,
+    TypeOrmModule.forRoot(typeOrmConfig),
   ],
   controllers: [HealthController],
 })
