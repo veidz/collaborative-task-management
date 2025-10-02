@@ -1,5 +1,18 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
@@ -7,6 +20,12 @@ import { RefreshDto } from './dto/refresh.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
 import { RefreshResponseDto } from './dto/refresh-response.dto'
+import { ProfileResponseDto } from './dto/profile-response.dto'
+import {
+  CurrentUser,
+  CurrentUserData,
+} from './decorators/current-user.decorator'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -71,5 +90,28 @@ export class AuthController {
   })
   async refresh(@Body() refreshDto: RefreshDto): Promise<RefreshResponseDto> {
     return this.authService.refresh(refreshDto)
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile retrieved successfully',
+    type: ProfileResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getProfile(
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<ProfileResponseDto> {
+    return this.authService.getProfile(user.id)
   }
 }

@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  NotFoundException,
   Logger,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
@@ -13,6 +14,7 @@ import { RefreshDto } from './dto/refresh.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
 import { RefreshResponseDto } from './dto/refresh-response.dto'
+import { ProfileResponseDto } from './dto/profile-response.dto'
 
 @Injectable()
 export class AuthService {
@@ -155,6 +157,26 @@ export class AuthService {
         error instanceof Error ? error.message : 'Unknown error'
       this.logger.warn(`Token refresh failed: ${errorMessage}`)
       throw new UnauthorizedException('Invalid or expired token')
+    }
+  }
+
+  async getProfile(userId: string): Promise<ProfileResponseDto> {
+    this.logger.log(`Profile request for user: ${userId}`)
+
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      this.logger.warn(`Profile not found for user: ${userId}`)
+      throw new NotFoundException('User not found')
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      createdAt: user.createdAt,
     }
   }
 
