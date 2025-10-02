@@ -1,0 +1,35 @@
+FROM node:20-alpine AS base
+
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY packages ./packages
+
+RUN pnpm install --frozen-lockfile
+
+FROM base AS builder
+
+ARG SERVICE_PATH
+COPY ${SERVICE_PATH} ./${SERVICE_PATH}
+
+RUN pnpm --filter @packages/* build
+RUN pnpm --filter ${SERVICE_NAME} build
+
+FROM node:20-alpine AS runner
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/${SERVICE_PATH}/dist ./dist
+COPY --from=builder /app/${SERVICE_PATH}/package.json ./package.json
+
+ENV NODE_ENV=production
+
+EXPOSE ${PORT}
+
+CMD ["node", "dist/main.js"]
