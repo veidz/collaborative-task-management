@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { HealthModule } from './health/health.module'
+import { AuthModule } from './auth/auth.module'
 import { LoggerModule } from './common/logger'
 
 @Module({
@@ -11,6 +12,7 @@ import { LoggerModule } from './common/logger'
     }),
     LoggerModule,
     HealthModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
