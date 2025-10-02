@@ -166,47 +166,42 @@ services:
   #   networks:
   #     - collaborative-task-management-network
 
-  # api-gateway:
-  #   build:
-  #     context: .
-  #     dockerfile: apps/api-gateway/Dockerfile
-  #     target: development
-  #   container_name: collaborative-task-management-api-gateway
-  #   restart: unless-stopped
-  #   command: pnpm dev
-  #   ports:
-  #     - '3001:3001'
-  #   environment:
-  #     NODE_ENV: development
-  #     PORT: 3001
-  #     AUTH_SERVICE_URL: http://auth-service:3002
-  #     TASKS_SERVICE_URL: http://tasks-service:3003
-  #     NOTIFICATIONS_SERVICE_URL: http://notifications-service:3004
-  #     JWT_SECRET: jwt_secret
-  #     LOG_LEVEL: debug
-  #   volumes:
-  #     - ./apps/api-gateway:/app/apps/api-gateway
-  #     - ./packages:/app/packages
-  #     - /app/node_modules
-  #     - /app/apps/api-gateway/node_modules
-  #     - /app/packages/types/node_modules
-  #     - /app/packages/utils/node_modules
-  #     - /app/packages/logger/node_modules
-  #   depends_on:
-  #     auth-service:
-  #       condition: service_healthy
-  #     tasks-service:
-  #       condition: service_healthy
-  #     notifications-service:
-  #       condition: service_healthy
-  #   healthcheck:
-  #     test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 40s
-  #   networks:
-  #     - collaborative-task-management-network
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+      target: development
+    container_name: collaborative-task-management-api-gateway
+    restart: unless-stopped
+    command: pnpm dev
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      AUTH_SERVICE_URL: http://auth-service:3002
+      TASKS_SERVICE_URL: http://tasks-service:3003
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:3004
+      JWT_SECRET: jwt_secret
+      LOG_LEVEL: info
+    volumes:
+      - ./apps/api-gateway:/app/apps/api-gateway
+      - ./packages:/app/packages
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      # tasks-service:
+      #   condition: service_healthy
+      # notifications-service:
+      #   condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - collaborative-task-management-network
 
   # web:
   #   build:
