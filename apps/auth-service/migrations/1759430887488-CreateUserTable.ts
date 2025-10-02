@@ -1,72 +1,35 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm'
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class CreateUserTable1759430887488 implements MigrationInterface {
+  name = 'CreateUserTable1759430887488'
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`)
 
-    await queryRunner.createTable(
-      new Table({
-        name: 'users',
-        columns: [
-          {
-            name: 'id',
-            type: 'uuid',
-            isPrimary: true,
-            generationStrategy: 'uuid',
-            default: 'uuid_generate_v4()',
-          },
-          {
-            name: 'email',
-            type: 'varchar',
-            isUnique: true,
-            isNullable: false,
-          },
-          {
-            name: 'username',
-            type: 'varchar',
-            isUnique: true,
-            isNullable: false,
-          },
-          {
-            name: 'password',
-            type: 'varchar',
-            isNullable: false,
-          },
-          {
-            name: 'created_at',
-            type: 'timestamp',
-            default: 'CURRENT_TIMESTAMP',
-          },
-          {
-            name: 'updated_at',
-            type: 'timestamp',
-            default: 'CURRENT_TIMESTAMP',
-          },
-        ],
-      }),
-      true,
-    )
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "email" varchar NOT NULL UNIQUE,
+        "username" varchar NOT NULL UNIQUE,
+        "password" varchar NOT NULL,
+        "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updated_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
 
-    await queryRunner.createIndex(
-      'users',
-      new TableIndex({
-        name: 'IDX_USERS_EMAIL',
-        columnNames: ['email'],
-      }),
-    )
+    // Create indexes only if they don't exist
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_USERS_EMAIL" ON "users" ("email")
+    `)
 
-    await queryRunner.createIndex(
-      'users',
-      new TableIndex({
-        name: 'IDX_USERS_USERNAME',
-        columnNames: ['username'],
-      }),
-    )
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_USERS_USERNAME" ON "users" ("username")
+    `)
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropIndex('users', 'IDX_USERS_USERNAME')
-    await queryRunner.dropIndex('users', 'IDX_USERS_EMAIL')
-    await queryRunner.dropTable('users')
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_USERS_USERNAME"`)
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_USERS_EMAIL"`)
+    await queryRunner.query(`DROP TABLE IF EXISTS "users"`)
   }
 }
