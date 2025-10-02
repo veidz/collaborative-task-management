@@ -14,6 +14,21 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^20.0.0
         version: 20.0.0
+      '@eslint/js':
+        specifier: ^9.12.0
+        version: 9.36.0
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.8.0
+        version: 8.45.0(@typescript-eslint/parser@8.45.0(eslint@9.36.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.36.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.8.0
+        version: 8.45.0(eslint@9.36.0(jiti@2.6.1))(typescript@5.9.3)
+      eslint:
+        specifier: ^9.12.0
+        version: 9.36.0(jiti@2.6.1)
+      eslint-config-prettier:
+        specifier: ^9.1.0
+        version: 9.1.2(eslint@9.36.0(jiti@2.6.1))
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -26,6 +41,9 @@ importers:
       turbo:
         specifier: ^2.5.8
         version: 2.5.8
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.3
 
   packages/eslint-config:
     dependencies:
