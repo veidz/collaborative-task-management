@@ -9,8 +9,10 @@ import * as bcrypt from 'bcrypt'
 import { UsersRepository } from '../users/users.repository'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
+import { RefreshDto } from './dto/refresh.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
+import { RefreshResponseDto } from './dto/refresh-response.dto'
 
 @Injectable()
 export class AuthService {
@@ -84,15 +86,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials')
     }
 
-    const payload = { sub: user.id, email: user.email, username: user.username }
-
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: process.env.JWT_ACCESS_EXPIRATION || '15m',
-    })
-
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
-    })
+    const accessToken = this.generateAccessToken(
+      user.id,
+      user.email,
+      user.username,
+    )
+    const refreshToken = this.generateRefreshToken(
+      user.id,
+      user.email,
+      user.username,
+    )
 
     this.logger.log(`User logged in successfully: ${user.id}`)
 
@@ -106,5 +109,86 @@ export class AuthService {
       accessToken,
       refreshToken,
     }
+  }
+
+  async refresh(refreshDto: RefreshDto): Promise<RefreshResponseDto> {
+    this.logger.log('Token refresh attempt')
+
+    try {
+      const payload = this.jwtService.verify(refreshDto.refreshToken)
+
+      if (payload.type !== 'refresh') {
+        this.logger.warn('Token refresh failed: Invalid token type')
+        throw new UnauthorizedException('Invalid token type')
+      }
+
+      const user = await this.usersRepository.findOne({
+        where: { id: payload.sub },
+      })
+
+      if (!user) {
+        this.logger.warn(
+          `Token refresh failed: User not found - ${payload.sub}`,
+        )
+        throw new UnauthorizedException('Invalid token')
+      }
+
+      const accessToken = this.generateAccessToken(
+        user.id,
+        user.email,
+        user.username,
+      )
+      const refreshToken = this.generateRefreshToken(
+        user.id,
+        user.email,
+        user.username,
+      )
+
+      this.logger.log(`Token refreshed successfully for user: ${user.id}`)
+
+      return {
+        accessToken,
+        refreshToken,
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+      this.logger.warn(`Token refresh failed: ${errorMessage}`)
+      throw new UnauthorizedException('Invalid or expired token')
+    }
+  }
+
+  private generateAccessToken(
+    userId: string,
+    email: string,
+    username: string,
+  ): string {
+    const payload = {
+      sub: userId,
+      email,
+      username,
+      type: 'access',
+    }
+
+    return this.jwtService.sign(payload, {
+      expiresIn: process.env.JWT_ACCESS_EXPIRATION || '15m',
+    })
+  }
+
+  private generateRefreshToken(
+    userId: string,
+    email: string,
+    username: string,
+  ): string {
+    const payload = {
+      sub: userId,
+      email,
+      username,
+      type: 'refresh',
+    }
+
+    return this.jwtService.sign(payload, {
+      expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
+    })
   }
 }
