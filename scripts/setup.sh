@@ -17,11 +17,11 @@ copy_env() {
   fi
 }
 
-copy_env "apps/auth-service"
-copy_env "apps/tasks-service"
-copy_env "apps/notifications-service"
-copy_env "apps/api-gateway"
-copy_env "apps/web"
+copy_env "../apps/auth-service"
+copy_env "../apps/tasks-service"
+copy_env "../apps/notifications-service"
+copy_env "../apps/api-gateway"
+copy_env "../apps/web"
 
 echo ""
 echo -e "${GREEN}✓${NO_COLOR} Setup complete!"
