@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoggerModule } from './common/logger'
 import { typeOrmConfig } from './config/typeorm.config'
 import { HealthController } from './health/health.controller'
+import { AuthModule } from './auth/auth.module'
+import { UsersModule } from './users/users.module'
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { HealthController } from './health/health.controller'
     }),
     LoggerModule,
     TypeOrmModule.forRoot(typeOrmConfig),
+    AuthModule,
+    UsersModule,
   ],
   controllers: [HealthController],
 })
