@@ -61,24 +61,13 @@ services:
       JWT_SECRET: jwt_secret
       JWT_ACCESS_EXPIRATION: 15m
       JWT_REFRESH_EXPIRATION: 7d
-      LOG_LEVEL: debug
+      LOG_LEVEL: info
     volumes:
       - ./apps/auth-service:/app/apps/auth-service
       - ./packages:/app/packages
-      - /app/node_modules
-      - /app/apps/auth-service/node_modules
-      - /app/packages/types/node_modules
-      - /app/packages/utils/node_modules
-      - /app/packages/logger/node_modules
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
     networks:
       - collaborative-task-management-network
 
@@ -194,12 +183,6 @@ services:
       #   condition: service_healthy
       # notifications-service:
       #   condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
     networks:
       - collaborative-task-management-network
 
