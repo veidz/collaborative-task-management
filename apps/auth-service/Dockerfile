@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 RUN apk add --no-cache curl
 
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
 
 WORKDIR /app
 
@@ -17,9 +17,6 @@ RUN cd /app/packages/utils && pnpm build
 RUN cd /app/packages/logger && pnpm build
 
 RUN cd /app/apps/auth-service && pnpm build
-
-RUN echo "=== Auth service dist contents ===" && \
-    ls -laR /app/apps/auth-service/dist/
 
 WORKDIR /app/apps/auth-service
 
