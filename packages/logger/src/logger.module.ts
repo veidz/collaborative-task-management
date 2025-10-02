@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino'
-import { CORRELATION_ID_HEADER } from '@packages/utils'
+
+const CORRELATION_ID_HEADER = 'x-correlation-id'
 
 @Module({
   imports: [
@@ -18,25 +19,32 @@ import { CORRELATION_ID_HEADER } from '@packages/utils'
                 },
               }
             : undefined,
-        customProps: (req) => {
+        customProps: (req: {
+          headers: Record<string, string | string[] | undefined>
+        }) => {
           return {
             correlationId: req.headers[CORRELATION_ID_HEADER],
           }
         },
         serializers: {
-          req: (req) => ({
+          req: (req: {
+            id: string
+            method: string
+            url: string
+            headers?: Record<string, string | string[] | undefined>
+          }) => ({
             id: req.id,
             method: req.method,
             url: req.url,
             correlationId: req.headers?.[CORRELATION_ID_HEADER],
           }),
-          res: (res) => ({
+          res: (res: { statusCode: number }) => ({
             statusCode: res.statusCode,
           }),
         },
         level: process.env.LOG_LEVEL || 'info',
         formatters: {
-          level: (label) => {
+          level: (label: string) => {
             return { level: label }
           },
         },

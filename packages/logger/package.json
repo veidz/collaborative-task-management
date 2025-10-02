@@ -18,6 +18,6 @@
   },
   "devDependencies": {
     "@packages/tsconfig": "workspace:*",
-    "@packages/utils": "workspace:*"
+    "@types/node": "^20.16.10"
   }
 }

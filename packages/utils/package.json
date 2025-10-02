@@ -9,9 +9,11 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
+    "@packages/types": "workspace:*",
     "typescript": "^5.6.2"
   },
   "devDependencies": {
-    "@packages/tsconfig": "workspace:*"
+    "@packages/tsconfig": "workspace:*",
+    "@types/node": "^20.16.10"
   }
 }
