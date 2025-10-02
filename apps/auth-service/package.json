@@ -1,0 +1,52 @@
+{
+  "name": "@apps/auth-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "node dist/main",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/config/typeorm.config.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/typeorm.config.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/typeorm.config.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^8.0.0",
+    "@nestjs/typeorm": "^10.0.2",
+    "@nestjs/config": "^3.2.3",
+    "@nestjs/jwt": "^10.2.0",
+    "@packages/logger": "workspace:*",
+    "@packages/types": "workspace:*",
+    "@packages/utils": "workspace:*",
+    "bcrypt": "^5.1.1",
+    "class-validator": "^0.14.1",
+    "class-transformer": "^0.5.1",
+    "dotenv": "^16.4.5",
+    "nestjs-pino": "^4.1.0",
+    "pino": "^9.4.0",
+    "pino-http": "^10.3.0",
+    "pg": "^8.13.0",
+    "typeorm": "^0.3.20",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@packages/eslint-config": "workspace:*",
+    "@packages/tsconfig": "workspace:*",
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.16.10",
+    "typescript": "^5.6.2"
+  }
+}
