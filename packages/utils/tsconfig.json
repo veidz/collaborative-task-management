@@ -3,12 +3,11 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@packages/types": ["../types/src"]
-    }
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "types": ["node"]
   },
   "include": ["src/**/*"],
-  "references": [{ "path": "../types" }]
+  "exclude": ["node_modules", "dist"]
 }

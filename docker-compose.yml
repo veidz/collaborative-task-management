@@ -1,12 +1,12 @@
 services:
   postgres:
     image: postgres:17.5-alpine
-    container_name: task-management-postgres
+    container_name: collaborative-task-management-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: task_management
+      POSTGRES_DB: collaborative_task_management
     ports:
       - "5432:5432"
     volumes:
@@ -18,11 +18,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - task-management-network
+      - collaborative-task-management-network
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
-    container_name: task-management-rabbitmq
+    container_name: collaborative-task-management-rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: rabbitmq
@@ -38,28 +38,28 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - task-management-network
+      - collaborative-task-management-network
 
   auth-service:
     build:
       context: .
       dockerfile: apps/auth-service/Dockerfile
-    container_name: task-management-auth-service
+    container_name: collaborative-task-management-auth-service
     restart: unless-stopped
     ports:
       - "3002:3002"
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3002
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: auth_service
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_SECRET: jwt_secret
       JWT_ACCESS_EXPIRATION: 15m
       JWT_REFRESH_EXPIRATION: 7d
-      LOG_LEVEL: info
+      LOG_LEVEL: debug
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,20 +68,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 40s
     networks:
-      - task-management-network
+      - collaborative-task-management-network
 
   # tasks-service:
   #   build:
   #     context: .
   #     dockerfile: apps/tasks-service/Dockerfile
-  #   container_name: task-management-tasks-service
+  #   container_name: collaborative-task-management-tasks-service
   #   restart: unless-stopped
   #   ports:
   #     - '3003:3003'
   #   environment:
-  #     NODE_ENV: production
+  #     NODE_ENV: development
   #     PORT: 3003
   #     DB_HOST: postgres
   #     DB_PORT: 5432
@@ -89,7 +89,7 @@ services:
   #     DB_PASSWORD: postgres
   #     DB_NAME: tasks_service
   #     RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
-  #     LOG_LEVEL: info
+  #     LOG_LEVEL: debug
   #   depends_on:
   #     postgres:
   #       condition: service_healthy
@@ -100,20 +100,20 @@ services:
   #     interval: 10s
   #     timeout: 5s
   #     retries: 5
-  #     start_period: 30s
+  #     start_period: 40s
   #   networks:
-  #     - task-management-network
+  #     - collaborative-task-management-network
 
   # notifications-service:
   #   build:
   #     context: .
   #     dockerfile: apps/notifications-service/Dockerfile
-  #   container_name: task-management-notifications-service
+  #   container_name: collaborative-task-management-notifications-service
   #   restart: unless-stopped
   #   ports:
   #     - '3004:3004'
   #   environment:
-  #     NODE_ENV: production
+  #     NODE_ENV: development
   #     PORT: 3004
   #     DB_HOST: postgres
   #     DB_PORT: 5432
@@ -121,7 +121,7 @@ services:
   #     DB_PASSWORD: postgres
   #     DB_NAME: notifications_service
   #     RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
-  #     LOG_LEVEL: info
+  #     LOG_LEVEL: debug
   #   depends_on:
   #     postgres:
   #       condition: service_healthy
@@ -132,26 +132,26 @@ services:
   #     interval: 10s
   #     timeout: 5s
   #     retries: 5
-  #     start_period: 30s
+  #     start_period: 40s
   #   networks:
-  #     - task-management-network
+  #     - collaborative-task-management-network
 
   # api-gateway:
   #   build:
   #     context: .
   #     dockerfile: apps/api-gateway/Dockerfile
-  #   container_name: task-management-api-gateway
+  #   container_name: collaborative-task-management-api-gateway
   #   restart: unless-stopped
   #   ports:
   #     - '3001:3001'
   #   environment:
-  #     NODE_ENV: production
+  #     NODE_ENV: development
   #     PORT: 3001
   #     AUTH_SERVICE_URL: http://auth-service:3002
   #     TASKS_SERVICE_URL: http://tasks-service:3003
   #     NOTIFICATIONS_SERVICE_URL: http://notifications-service:3004
-  #     JWT_SECRET: your-super-secret-jwt-key-change-in-production
-  #     LOG_LEVEL: info
+  #     JWT_SECRET: jwt_secret
+  #     LOG_LEVEL: debug
   #   depends_on:
   #     auth-service:
   #       condition: service_healthy
@@ -164,15 +164,15 @@ services:
   #     interval: 10s
   #     timeout: 5s
   #     retries: 5
-  #     start_period: 30s
+  #     start_period: 40s
   #   networks:
-  #     - task-management-network
+  #     - collaborative-task-management-network
 
   # web:
   #   build:
   #     context: .
   #     dockerfile: apps/web/Dockerfile
-  #   container_name: task-management-web
+  #   container_name: collaborative-task-management-web
   #   restart: unless-stopped
   #   ports:
   #     - '3000:3000'
@@ -183,12 +183,15 @@ services:
   #     api-gateway:
   #       condition: service_healthy
   #   networks:
-  #     - task-management-network
+  #     - collaborative-task-management-network
 
 volumes:
   postgres_data:
+    name: collaborative-task-management-postgres-data
   rabbitmq_data:
+    name: collaborative-task-management-rabbitmq-data
 
 networks:
-  task-management-network:
+  collaborative-task-management-network:
+    name: collaborative-task-management-network
     driver: bridge

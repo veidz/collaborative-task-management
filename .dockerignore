@@ -12,3 +12,6 @@ README.md
 .DS_Store
 .vscode
 .idea
+
+!apps/**/.env
+!apps/**/migrations

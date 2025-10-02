@@ -9,10 +9,8 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "strictPropertyInitialization": false,
-    "baseUrl": "./",
-    "paths": {
-      "@packages/*": ["../../packages/*/src"]
-    }
+    "skipLibCheck": true,
+    "baseUrl": "./"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "migrations", "tests"]

@@ -1,4 +1,4 @@
-import { PaginationMeta } from '@packages/types'
+import type { PaginationMeta } from '@packages/types'
 
 export interface PaginationOptions {
   page?: number

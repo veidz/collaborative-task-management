@@ -1,4 +1,6 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
 
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
@@ -10,26 +12,18 @@ COPY apps/auth-service ./apps/auth-service
 
 RUN pnpm install --frozen-lockfile
 
-FROM base AS builder
+RUN cd /app/packages/types && pnpm build
+RUN cd /app/packages/utils && pnpm build
+RUN cd /app/packages/logger && pnpm build
 
-RUN pnpm --filter @packages/types build
-RUN pnpm --filter @packages/utils build
-RUN pnpm --filter @packages/logger build
-RUN pnpm --filter @apps/auth-service build
+RUN cd /app/apps/auth-service && pnpm build
 
-FROM node:20-alpine AS runner
+RUN echo "=== Auth service dist contents ===" && \
+    ls -laR /app/apps/auth-service/dist/
 
-RUN apk add --no-cache curl
+WORKDIR /app/apps/auth-service
 
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/auth-service/dist ./dist
-COPY --from=builder /app/apps/auth-service/migrations ./migrations
-COPY --from=builder /app/apps/auth-service/package.json ./package.json
+ENV NODE_ENV=development
 
 EXPOSE 3002
 
