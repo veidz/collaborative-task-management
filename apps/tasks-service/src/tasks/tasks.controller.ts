@@ -1,7 +1,10 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
+  Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -11,10 +14,13 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiParam,
 } from '@nestjs/swagger'
 import { TasksService } from './tasks.service'
 import { CreateTaskDto } from './dto/create-task.dto'
+import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
 import { TaskResponseDto } from './dto/task-response.dto'
+import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import {
   CurrentUser,
@@ -23,12 +29,12 @@ import {
 
 @ApiTags('Tasks')
 @Controller('tasks')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new task' })
   @ApiResponse({
@@ -49,5 +55,50 @@ export class TasksController {
     @CurrentUser() user: CurrentUserData,
   ): Promise<TaskResponseDto> {
     return this.tasksService.create(createTaskDto, user.id)
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all tasks for current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tasks retrieved successfully',
+    type: PaginatedTasksResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing token',
+  })
+  async findAll(
+    @Query() query: GetTasksQueryDto,
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<PaginatedTasksResponseDto> {
+    return this.tasksService.findAll(query, user.id)
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get task by ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'Task UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Task retrieved successfully',
+    type: TaskResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found or not owned by user',
+  })
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<TaskResponseDto> {
+    return this.tasksService.findById(id, user.id)
   }
 }
