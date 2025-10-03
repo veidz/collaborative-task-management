@@ -9,6 +9,8 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger))
 
+  app.setGlobalPrefix('api')
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -17,11 +19,9 @@ async function bootstrap() {
     }),
   )
 
-  app.enableCors()
-
   const config = new DocumentBuilder()
     .setTitle('API Gateway')
-    .setDescription('API Gateway for Task Management System')
+    .setDescription('Central API Gateway for Collaborative Task Management')
     .setVersion('1.0')
     .addBearerAuth()
     .build()
@@ -32,8 +32,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3001
   await app.listen(port)
 
-  console.log(`🚀 API Gateway is running on http://localhost:${port}`)
-  console.log(`📚 Swagger docs available at http://localhost:${port}/api/docs`)
+  console.log(`API Gateway is running on http://localhost:${port}`)
+  console.log(`Swagger docs available at http://localhost:${port}/api/docs`)
 }
 
 bootstrap()
