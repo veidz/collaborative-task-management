@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { TasksRepository } from './tasks.repository'
 import { CreateTaskDto } from './dto/create-task.dto'
+import { UpdateTaskDto } from './dto/update-task.dto'
 import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
 import { TaskResponseDto } from './dto/task-response.dto'
 import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
@@ -83,6 +84,64 @@ export class TasksService {
     this.logger.log(`Task ${id} retrieved successfully`)
 
     return this.mapToResponseDto(task)
+  }
+
+  async update(
+    id: string,
+    updateTaskDto: UpdateTaskDto,
+    userId: string,
+  ): Promise<TaskResponseDto> {
+    this.logger.log(`Updating task ${id} for user: ${userId}`)
+
+    const updates: Partial<Task> = {}
+
+    if (updateTaskDto.title !== undefined) {
+      updates.title = updateTaskDto.title
+    }
+
+    if (updateTaskDto.description !== undefined) {
+      updates.description = updateTaskDto.description
+    }
+
+    if (updateTaskDto.status !== undefined) {
+      updates.status = updateTaskDto.status
+    }
+
+    if (updateTaskDto.priority !== undefined) {
+      updates.priority = updateTaskDto.priority
+    }
+
+    if (updateTaskDto.deadline !== undefined) {
+      updates.deadline = new Date(updateTaskDto.deadline)
+    }
+
+    const updatedTask = await this.tasksRepository.updateTask(
+      id,
+      userId,
+      updates,
+    )
+
+    if (!updatedTask) {
+      this.logger.warn(`Task ${id} not found or not owned by user: ${userId}`)
+      throw new NotFoundException('Task not found')
+    }
+
+    this.logger.log(`Task ${id} updated successfully`)
+
+    return this.mapToResponseDto(updatedTask)
+  }
+
+  async delete(id: string, userId: string): Promise<void> {
+    this.logger.log(`Deleting task ${id} for user: ${userId}`)
+
+    const deleted = await this.tasksRepository.deleteTask(id, userId)
+
+    if (!deleted) {
+      this.logger.warn(`Task ${id} not found or not owned by user: ${userId}`)
+      throw new NotFoundException('Task not found')
+    }
+
+    this.logger.log(`Task ${id} deleted successfully`)
   }
 
   private mapToResponseDto(task: Task): TaskResponseDto {

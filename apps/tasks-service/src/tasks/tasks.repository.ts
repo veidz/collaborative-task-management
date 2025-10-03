@@ -42,4 +42,24 @@ export class TasksRepository extends Repository<Task> {
       where: { id, createdById: userId },
     })
   }
+
+  async updateTask(
+    id: string,
+    userId: string,
+    updates: Partial<Task>,
+  ): Promise<Task | null> {
+    const task = await this.findByIdAndUser(id, userId)
+
+    if (!task) {
+      return null
+    }
+
+    Object.assign(task, updates)
+    return this.save(task)
+  }
+
+  async deleteTask(id: string, userId: string): Promise<boolean> {
+    const result = await this.delete({ id, createdById: userId })
+    return (result.affected ?? 0) > 0
+  }
 }
