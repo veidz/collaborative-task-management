@@ -95,8 +95,9 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: tasks_service
+      JWT_SECRET: jwt_secret
       RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
-      LOG_LEVEL: debug
+      LOG_LEVEL: info
     volumes:
       - ./apps/tasks-service:/app/apps/tasks-service
       - ./packages:/app/packages

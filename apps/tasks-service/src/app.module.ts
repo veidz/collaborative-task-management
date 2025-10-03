@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoggerModule } from './common/logger'
 import { HealthModule } from './health/health.module'
+import { TasksModule } from './tasks/tasks.module'
 import typeormConfig from './config/typeorm.config'
 
 @Module({
@@ -16,6 +17,7 @@ import typeormConfig from './config/typeorm.config'
     }),
     LoggerModule,
     HealthModule,
+    TasksModule,
   ],
 })
 export class AppModule {}
