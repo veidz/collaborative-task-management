@@ -1,0 +1,20 @@
+{
+  "extends": "@packages/tsconfig/nestjs.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "resolvePackageJsonExports": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "@packages/types": ["../../packages/types/dist"],
+      "@packages/utils": ["../../packages/utils/dist"]
+    }
+  },
+  "include": ["src/**/*", "migrations/**/*"],
+  "exclude": ["node_modules", "dist", "../../packages/*/src/**/*"]
+}
