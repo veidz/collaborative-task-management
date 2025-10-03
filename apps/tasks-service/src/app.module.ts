@@ -5,6 +5,7 @@ import { LoggerModule } from './common/logger'
 import { HealthModule } from './health/health.module'
 import { TasksModule } from './tasks/tasks.module'
 import typeormConfig from './config/typeorm.config'
+import { CommentsModule } from './comments/comments.module'
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import typeormConfig from './config/typeorm.config'
     LoggerModule,
     HealthModule,
     TasksModule,
+    CommentsModule,
   ],
 })
 export class AppModule {}

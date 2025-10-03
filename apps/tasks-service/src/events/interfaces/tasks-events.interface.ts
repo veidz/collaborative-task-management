@@ -27,8 +27,17 @@ export interface TaskDeletedEvent {
   deletedAt: Date
 }
 
+export interface CommentCreatedEvent {
+  commentId: string
+  content: string
+  taskId: string
+  authorId: string
+  createdAt: Date
+}
+
 export enum TaskEventPattern {
   TASK_CREATED = 'task.created',
   TASK_UPDATED = 'task.updated',
   TASK_DELETED = 'task.deleted',
+  COMMENT_CREATED = 'task.comment.created',
 }

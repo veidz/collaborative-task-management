@@ -6,6 +6,7 @@ import {
 } from '@nestjs/microservices'
 import { ConfigService } from '@nestjs/config'
 import {
+  CommentCreatedEvent,
   TaskCreatedEvent,
   TaskDeletedEvent,
   TaskEventPattern,
@@ -87,6 +88,25 @@ export class EventsPublisherService implements OnModuleInit {
     } catch (error) {
       this.logger.error(
         `Failed to publish task.deleted event: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      )
+      throw error
+    }
+  }
+
+  async publishCommentCreated(event: CommentCreatedEvent): Promise<void> {
+    try {
+      this.logger.log(
+        `Publishing task.comment.created event for comment: ${event.commentId}`,
+      )
+
+      this.client.emit(TaskEventPattern.COMMENT_CREATED, event)
+
+      this.logger.log(
+        `task.comment.created event published successfully for comment: ${event.commentId}`,
+      )
+    } catch (error) {
+      this.logger.error(
+        `Failed to publish task.comment.created event: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
       throw error
     }
