@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { connect, Connection, Channel, ConsumeMessage } from 'amqplib'
 import { NotificationsService } from '../notifications/notifications.service'
+import { NotificationsGateway } from '../websocket/websocket.gateway'
 import {
   TaskCreatedEvent,
   TaskUpdatedEvent,
@@ -30,6 +31,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async onModuleInit() {
@@ -117,17 +119,50 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
 
   private async handleTaskCreated(event: TaskCreatedEvent): Promise<void> {
     this.logger.log(`Handling task.created event for task: ${event.taskId}`)
-    await this.notificationsService.createFromTaskCreated(event)
+
+    const notification =
+      await this.notificationsService.createFromTaskCreated(event)
+
+    this.notificationsGateway.sendNotificationToUser(event.createdById, {
+      id: notification.id,
+      userId: notification.userId,
+      type: notification.type,
+      message: notification.message,
+      read: notification.read,
+      createdAt: notification.createdAt,
+    })
   }
 
   private async handleTaskUpdated(event: TaskUpdatedEvent): Promise<void> {
     this.logger.log(`Handling task.updated event for task: ${event.taskId}`)
-    await this.notificationsService.createFromTaskUpdated(event)
+
+    const notification =
+      await this.notificationsService.createFromTaskUpdated(event)
+
+    this.notificationsGateway.sendNotificationToUser(event.updatedById, {
+      id: notification.id,
+      userId: notification.userId,
+      type: notification.type,
+      message: notification.message,
+      read: notification.read,
+      createdAt: notification.createdAt,
+    })
   }
 
   private async handleTaskDeleted(event: TaskDeletedEvent): Promise<void> {
     this.logger.log(`Handling task.deleted event for task: ${event.taskId}`)
-    await this.notificationsService.createFromTaskDeleted(event)
+
+    const notification =
+      await this.notificationsService.createFromTaskDeleted(event)
+
+    this.notificationsGateway.sendNotificationToUser(event.deletedById, {
+      id: notification.id,
+      userId: notification.userId,
+      type: notification.type,
+      message: notification.message,
+      read: notification.read,
+      createdAt: notification.createdAt,
+    })
   }
 
   private async handleCommentCreated(
@@ -136,7 +171,18 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(
       `Handling task.comment.created event for comment: ${event.commentId}`,
     )
-    await this.notificationsService.createFromCommentCreated(event)
+
+    const notification =
+      await this.notificationsService.createFromCommentCreated(event)
+
+    this.notificationsGateway.sendNotificationToUser(event.authorId, {
+      id: notification.id,
+      userId: notification.userId,
+      type: notification.type,
+      message: notification.message,
+      read: notification.read,
+      createdAt: notification.createdAt,
+    })
   }
 
   async onModuleDestroy() {

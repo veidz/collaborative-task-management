@@ -6,6 +6,7 @@ import { HealthModule } from './health/health.module'
 import typeormConfig from './config/typeorm.config'
 import { NotificationsModule } from './notifications/notifications.module'
 import { EventsConsumerModule } from './events/events-consumer.module'
+import { WebSocketModule } from './websocket/websocket.module'
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { EventsConsumerModule } from './events/events-consumer.module'
     HealthModule,
     NotificationsModule,
     EventsConsumerModule,
+    WebSocketModule,
   ],
 })
 export class AppModule {}

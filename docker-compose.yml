@@ -176,10 +176,10 @@ services:
     depends_on:
       auth-service:
         condition: service_healthy
-      # tasks-service:
-      # condition: service_healthy
-      # notifications-service:
-      #   condition: service_healthy
+      tasks-service:
+        condition: service_healthy
+      notifications-service:
+        condition: service_healthy
     networks:
       - collaborative-task-management-network
 
