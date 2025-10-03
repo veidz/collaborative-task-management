@@ -7,7 +7,7 @@ import { CommentResponseDto } from './dto/comment-response.dto'
 import { PaginatedCommentsResponseDto } from './dto/paginated-comments-response.dto'
 import { Comment } from './entities/comment.entity'
 import { EventsPublisherService } from '../events/events-publisher.service'
-import { CommentCreatedEvent } from 'src/events/interfaces/tasks-events.interface'
+import { CommentCreatedEvent } from 'src/events/interfaces/task-events.interface'
 
 @Injectable()
 export class CommentsService {

@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoggerModule } from './common/logger'
 import { HealthModule } from './health/health.module'
 import typeormConfig from './config/typeorm.config'
+import { NotificationsModule } from './notifications/notifications.module'
+import { EventsConsumerModule } from './events/events-consumer.module'
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import typeormConfig from './config/typeorm.config'
     }),
     LoggerModule,
     HealthModule,
+    NotificationsModule,
+    EventsConsumerModule,
   ],
 })
 export class AppModule {}

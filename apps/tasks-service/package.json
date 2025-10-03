@@ -47,6 +47,7 @@
     "@nestjs/testing": "^10.4.19",
     "@packages/eslint-config": "workspace:*",
     "@packages/tsconfig": "workspace:*",
+    "@types/amqplib": "0.10.4",
     "@types/express": "^5.0.0",
     "@types/node": "^20.16.10",
     "@types/passport-jwt": "^4.0.1",

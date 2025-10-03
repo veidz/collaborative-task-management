@@ -335,6 +335,9 @@ importers:
       '@packages/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
+      '@types/amqplib':
+        specifier: 0.10.4
+        version: 0.10.4
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.3
@@ -450,6 +453,9 @@ importers:
       '@packages/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
+      '@types/amqplib':
+        specifier: 0.10.4
+        version: 0.10.4
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.3
@@ -948,6 +954,9 @@ packages:
 
   '@tsconfig/node16@1.0.4':
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
+
+  '@types/amqplib@0.10.4':
+    resolution: {integrity: sha512-Y5Sqquh/LqDxSgxYaAAFNM0M7GyONtSDCcFMJk+DQwYEjibPyW6y+Yu9H9omdkKc3epyXULmFN3GTaeBHhn2Hg==}
 
   '@types/bcrypt@5.0.2':
     resolution: {integrity: sha512-6atioO8Y75fNcbmj0G7UjI9lXN2pQ/IGJ2FWT4a/btd0Lk9lQalHLKhkgKVZ3r+spnmWUKfbMi1GEe9wyHQfNQ==}
@@ -4278,6 +4287,10 @@ snapshots:
   '@tsconfig/node14@1.0.3': {}
 
   '@tsconfig/node16@1.0.4': {}
+
+  '@types/amqplib@0.10.4':
+    dependencies:
+      '@types/node': 20.19.19
 
   '@types/bcrypt@5.0.2':
     dependencies:

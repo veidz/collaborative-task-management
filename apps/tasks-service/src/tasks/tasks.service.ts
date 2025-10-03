@@ -13,7 +13,7 @@ import {
   TaskCreatedEvent,
   TaskDeletedEvent,
   TaskUpdatedEvent,
-} from 'src/events/interfaces/tasks-events.interface'
+} from 'src/events/interfaces/task-events.interface'
 
 @Injectable()
 export class TasksService {
