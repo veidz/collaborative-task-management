@@ -6,5 +6,5 @@ pnpm migration:run
 
 echo "✅ Migrations completed successfully"
 
-echo "🚀 Starting auth-service..."
+echo "🚀 Starting tasks-service..."
 exec "$@"

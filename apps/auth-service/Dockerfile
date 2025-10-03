@@ -1,6 +1,6 @@
 FROM node:20-alpine AS base
 
-RUN apk add --no-cache curl python3 make g++
+RUN apk add --no-cache curl
 
 RUN corepack enable && corepack prepare pnpm@10.17.1 --activate
 
@@ -15,9 +15,6 @@ RUN pnpm install --frozen-lockfile
 FROM base AS development
 
 RUN find . -name "*.tsbuildinfo" -type f -delete
-
-RUN cd /app/packages/types && pnpm build
-RUN cd /app/packages/utils && pnpm build
 
 WORKDIR /app/apps/auth-service
 
@@ -35,8 +32,6 @@ FROM base AS production
 
 RUN find . -name "*.tsbuildinfo" -type f -delete
 
-RUN cd /app/packages/types && pnpm build
-RUN cd /app/packages/utils && pnpm build
 RUN cd /app/apps/auth-service && pnpm build
 
 RUN ls -la /app/apps/auth-service/dist/main.js
