@@ -10,10 +10,10 @@ import * as bcrypt from 'bcrypt'
 import { UsersRepository } from '../users/users.repository'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
-import { RefreshDto } from './dto/refresh.dto'
+import { RefreshTokenDto } from './dto/refresh.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
-import { RefreshResponseDto } from './dto/refresh-response.dto'
+import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto'
 import { ProfileResponseDto } from './dto/profile-response.dto'
 
 @Injectable()
@@ -113,11 +113,13 @@ export class AuthService {
     }
   }
 
-  async refresh(refreshDto: RefreshDto): Promise<RefreshResponseDto> {
+  async refresh(
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<RefreshTokenResponseDto> {
     this.logger.log('Token refresh attempt')
 
     try {
-      const payload = this.jwtService.verify(refreshDto.refreshToken)
+      const payload = this.jwtService.verify(refreshTokenDto.refreshToken)
 
       if (payload.type !== 'refresh') {
         this.logger.warn('Token refresh failed: Invalid token type')

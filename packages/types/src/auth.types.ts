@@ -9,7 +9,7 @@ export interface LoginDto {
   password: string
 }
 
-export interface RefreshDto {
+export interface RefreshTokenDto {
   refreshToken: string
 }
 

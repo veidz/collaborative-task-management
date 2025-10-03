@@ -1,17 +1,24 @@
-import { Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  UnauthorizedException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
+import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
+import { AxiosError } from 'axios'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
-import { RefreshDto } from './dto/refresh.dto'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
-import { RefreshResponseDto } from './dto/refresh-response.dto'
-import { ProfileResponseDto } from './dto/profile-response.dto'
+import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto'
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name)
   private readonly authServiceUrl: string
 
@@ -19,9 +26,19 @@ export class AuthService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.authServiceUrl =
-      this.configService.get<string>('AUTH_SERVICE_URL') ||
-      'http://auth-service:3002'
+    const url = this.configService.get<string>('services.auth.url')
+
+    if (!url) {
+      throw new Error(
+        'AUTH_SERVICE_URL is not defined in environment variables',
+      )
+    }
+
+    this.authServiceUrl = url
+  }
+
+  onModuleInit() {
+    this.logger.log(`Auth service URL configured: ${this.authServiceUrl}`)
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -37,15 +54,13 @@ export class AuthService {
         ),
       )
 
-      this.logger.log(`Registration successful for email: ${registerDto.email}`)
+      this.logger.log(`User registered successfully: ${registerDto.email}`)
       return response.data
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-      this.logger.error(
-        `Registration failed for email: ${registerDto.email} - ${errorMessage}`,
+      this.handleError(
+        error,
+        `Registration failed for email: ${registerDto.email}`,
       )
-      throw error
     }
   }
 
@@ -60,63 +75,83 @@ export class AuthService {
         ),
       )
 
-      this.logger.log(`Login successful for email: ${loginDto.email}`)
+      this.logger.log(`User logged in successfully: ${loginDto.email}`)
       return response.data
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-      this.logger.error(
-        `Login failed for email: ${loginDto.email} - ${errorMessage}`,
-      )
-      throw error
+      this.handleError(error, `Login failed for email: ${loginDto.email}`, true)
     }
   }
 
-  async refresh(refreshDto: RefreshDto): Promise<RefreshResponseDto> {
+  async refresh(
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<RefreshTokenResponseDto> {
     this.logger.log('Proxying token refresh request')
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post<RefreshResponseDto>(
+        this.httpService.post<RefreshTokenResponseDto>(
           `${this.authServiceUrl}/auth/refresh`,
-          refreshDto,
+          refreshTokenDto,
         ),
       )
 
-      this.logger.log('Token refresh successful')
+      this.logger.log('Token refreshed successfully')
       return response.data
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-      this.logger.error(`Token refresh failed - ${errorMessage}`)
-      throw error
+      this.handleError(error, 'Token refresh failed', true)
     }
   }
 
-  async getProfile(userId: string): Promise<ProfileResponseDto> {
-    this.logger.log(`Proxying profile request for user: ${userId}`)
+  async getProfile(token: string) {
+    this.logger.log('Proxying get profile request')
 
     try {
       const response = await firstValueFrom(
-        this.httpService.get<ProfileResponseDto>(
-          `${this.authServiceUrl}/auth/profile`,
-          {
-            headers: {
-              'X-User-Id': userId,
-            },
+        this.httpService.get(`${this.authServiceUrl}/auth/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        ),
+        }),
       )
 
-      this.logger.log(`Profile retrieved for user: ${userId}`)
+      this.logger.log('Profile retrieved successfully')
       return response.data
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-      this.logger.error(
-        `Profile retrieval failed for user: ${userId} - ${errorMessage}`,
-      )
-      throw error
+      this.handleError(error, 'Get profile failed', true)
     }
+  }
+
+  private handleError(
+    error: unknown,
+    message: string,
+    throwUnauthorized = false,
+  ): never {
+    if (error instanceof AxiosError) {
+      const status = error.response?.status
+      const responseMessage = error.response?.data?.message || error.message
+
+      this.logger.error(`${message}: ${responseMessage}`)
+
+      if (status === 401 || status === 403) {
+        if (throwUnauthorized) {
+          throw new UnauthorizedException(responseMessage)
+        }
+        throw new BadRequestException(responseMessage)
+      }
+
+      if (status === 400) {
+        throw new BadRequestException(responseMessage)
+      }
+
+      throw new InternalServerErrorException(responseMessage)
+    }
+
+    if (error instanceof Error) {
+      this.logger.error(`${message}: ${error.message}`)
+      throw new InternalServerErrorException(error.message)
+    }
+
+    this.logger.error(`${message}: Unknown error`)
+    throw new InternalServerErrorException('An unexpected error occurred')
   }
 }

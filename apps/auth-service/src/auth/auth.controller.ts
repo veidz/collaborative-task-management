@@ -18,10 +18,10 @@ import {
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
-import { RefreshDto } from './dto/refresh.dto'
+import { RefreshTokenDto } from './dto/refresh.dto'
 import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
-import { RefreshResponseDto } from './dto/refresh-response.dto'
+import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto'
 import { ProfileResponseDto } from './dto/profile-response.dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
 import {
@@ -80,7 +80,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Token successfully refreshed',
-    type: RefreshResponseDto,
+    type: RefreshTokenResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -90,8 +90,10 @@ export class AuthController {
     status: 400,
     description: 'Invalid input data',
   })
-  async refresh(@Body() refreshDto: RefreshDto): Promise<RefreshResponseDto> {
-    return this.authService.refresh(refreshDto)
+  async refresh(
+    @Body() refreshTokenDto: RefreshTokenDto,
+  ): Promise<RefreshTokenResponseDto> {
+    return this.authService.refresh(refreshTokenDto)
   }
 
   @Get('profile')
