@@ -1,8 +1,10 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm'
 
-export class CreateNotificationsTable1733238600000
+export class CreateNotificationsTable1759531819352
   implements MigrationInterface
 {
+  name = 'CreateNotificationsTable1759531819352'
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`)
 
