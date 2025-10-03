@@ -1,6 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { NotificationsRepository } from './notifications.repository'
 import { Notification, NotificationType } from './entities/notification.entity'
+import { NotificationResponseDto } from './dto/notification-response.dto'
+import { PaginatedNotificationsResponseDto } from './dto/paginated-notifications-response.dto'
 import {
   TaskCreatedEvent,
   TaskUpdatedEvent,
@@ -104,28 +106,92 @@ export class NotificationsService {
     page: number = 1,
     limit: number = 10,
     unreadOnly: boolean = false,
-  ): Promise<[Notification[], number]> {
+  ): Promise<PaginatedNotificationsResponseDto> {
     this.logger.log(`Fetching notifications for user: ${userId}`)
-    return this.notificationsRepository.findByUser(
-      userId,
+
+    const [notifications, total] =
+      await this.notificationsRepository.findByUser(
+        userId,
+        page,
+        limit,
+        unreadOnly,
+      )
+
+    const totalPages = Math.ceil(total / limit)
+
+    this.logger.log(`Found ${total} notifications for user: ${userId}`)
+
+    return {
+      data: notifications.map((notification) =>
+        this.mapToResponseDto(notification),
+      ),
+      total,
       page,
       limit,
-      unreadOnly,
-    )
+      totalPages,
+    }
   }
 
-  async markAsRead(id: string, userId: string): Promise<boolean> {
+  async markAsRead(
+    id: string,
+    userId: string,
+  ): Promise<NotificationResponseDto> {
     this.logger.log(`Marking notification ${id} as read for user: ${userId}`)
-    return this.notificationsRepository.markAsRead(id, userId)
+
+    const updated = await this.notificationsRepository.markAsRead(id, userId)
+
+    if (!updated) {
+      this.logger.warn(
+        `Notification ${id} not found or not owned by user: ${userId}`,
+      )
+      throw new NotFoundException('Notification not found')
+    }
+
+    const notification = await this.notificationsRepository.findOne({
+      where: { id, userId },
+    })
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found')
+    }
+
+    this.logger.log(`Notification ${id} marked as read`)
+
+    return this.mapToResponseDto(notification)
   }
 
-  async markAllAsRead(userId: string): Promise<number> {
+  async markAllAsRead(userId: string): Promise<{ updated: number }> {
     this.logger.log(`Marking all notifications as read for user: ${userId}`)
-    return this.notificationsRepository.markAllAsRead(userId)
+
+    const updated = await this.notificationsRepository.markAllAsRead(userId)
+
+    this.logger.log(
+      `Marked ${updated} notifications as read for user: ${userId}`,
+    )
+
+    return { updated }
   }
 
   async countUnread(userId: string): Promise<number> {
     this.logger.log(`Counting unread notifications for user: ${userId}`)
-    return this.notificationsRepository.countUnread(userId)
+
+    const count = await this.notificationsRepository.countUnread(userId)
+
+    this.logger.log(`User ${userId} has ${count} unread notifications`)
+
+    return count
+  }
+
+  private mapToResponseDto(
+    notification: Notification,
+  ): NotificationResponseDto {
+    return {
+      id: notification.id,
+      userId: notification.userId,
+      type: notification.type,
+      message: notification.message,
+      read: notification.read,
+      createdAt: notification.createdAt,
+    }
   }
 }
