@@ -15,6 +15,10 @@ import { UpdateTaskDto } from './dto/update-task.dto'
 import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
 import { TaskResponseDto } from './dto/task-response.dto'
 import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
+import { CreateCommentDto } from './dto/create-comment.dto'
+import { GetCommentsQueryDto } from './dto/get-comments-query.dto'
+import { CommentResponseDto } from './dto/comment-response.dto'
+import { PaginatedCommentsResponseDto } from './dto/paginated-comment-response.dto'
 
 @Injectable()
 export class TasksService implements OnModuleInit {
@@ -156,6 +160,68 @@ export class TasksService implements OnModuleInit {
       this.logger.log(`Task ${id} deleted successfully via proxy`)
     } catch (error) {
       this.handleError(error, `Failed to delete task ${id}`)
+    }
+  }
+
+  async createComment(
+    taskId: string,
+    createCommentDto: CreateCommentDto,
+    token: string,
+  ): Promise<CommentResponseDto> {
+    this.logger.log(
+      `Proxying create comment on task ${taskId} request to tasks-service`,
+    )
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<CommentResponseDto>(
+          `${this.tasksServiceUrl}/tasks/${taskId}/comments`,
+          createCommentDto,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        ),
+      )
+
+      this.logger.log(
+        `Comment created successfully on task ${taskId} via proxy`,
+      )
+      return response.data
+    } catch (error) {
+      this.handleError(error, `Failed to create comment on task ${taskId}`)
+    }
+  }
+
+  async findComments(
+    taskId: string,
+    query: GetCommentsQueryDto,
+    token: string,
+  ): Promise<PaginatedCommentsResponseDto> {
+    this.logger.log(
+      `Proxying get comments for task ${taskId} request to tasks-service`,
+    )
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<PaginatedCommentsResponseDto>(
+          `${this.tasksServiceUrl}/tasks/${taskId}/comments`,
+          {
+            params: query,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        ),
+      )
+
+      this.logger.log(
+        `Comments retrieved successfully for task ${taskId} via proxy`,
+      )
+      return response.data
+    } catch (error) {
+      this.handleError(error, `Failed to get comments for task ${taskId}`)
     }
   }
 
