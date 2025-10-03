@@ -25,6 +25,7 @@
     "@nestjs/microservices": "^10.4.19",
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
+    "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.5",
     "class-validator": "^0.14.1",
     "class-transformer": "^0.5.1",

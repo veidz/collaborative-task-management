@@ -8,6 +8,7 @@ import { TasksService } from './tasks.service'
 import { TasksRepository } from './tasks.repository'
 import { Task } from './entities/task.entity'
 import { JwtStrategy } from '../common/strategies/jwt.strategy'
+import { EventsModule } from '../events/events.module'
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { JwtStrategy } from '../common/strategies/jwt.strategy'
         }
       },
     }),
+    EventsModule,
   ],
   controllers: [TasksController],
   providers: [TasksService, TasksRepository, JwtStrategy],

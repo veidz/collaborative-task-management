@@ -8,12 +8,21 @@ import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
 import { TaskStatus } from './enums/task-status.enum'
 import { TaskPriority } from './enums/task-priority.enum'
 import { Task } from './entities/task.entity'
+import { EventsPublisherService } from '../events/events-publisher.service'
+import {
+  TaskCreatedEvent,
+  TaskDeletedEvent,
+  TaskUpdatedEvent,
+} from 'src/events/interfaces/tasks-events.interface'
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
 
-  constructor(private readonly tasksRepository: TasksRepository) {}
+  constructor(
+    private readonly tasksRepository: TasksRepository,
+    private readonly eventsPublisher: EventsPublisherService,
+  ) {}
 
   async create(
     createTaskDto: CreateTaskDto,
@@ -35,6 +44,19 @@ export class TasksService {
     const savedTask = await this.tasksRepository.save(task)
 
     this.logger.log(`Task created successfully: ${savedTask.id}`)
+
+    const event: TaskCreatedEvent = {
+      taskId: savedTask.id,
+      title: savedTask.title,
+      description: savedTask.description,
+      status: savedTask.status,
+      priority: savedTask.priority,
+      deadline: savedTask.deadline,
+      createdById: savedTask.createdById,
+      createdAt: savedTask.createdAt,
+    }
+
+    await this.eventsPublisher.publishTaskCreated(event)
 
     return this.mapToResponseDto(savedTask)
   }
@@ -93,26 +115,54 @@ export class TasksService {
   ): Promise<TaskResponseDto> {
     this.logger.log(`Updating task ${id} for user: ${userId}`)
 
+    const existingTask = await this.tasksRepository.findByIdAndUser(id, userId)
+
+    if (!existingTask) {
+      this.logger.warn(`Task ${id} not found or not owned by user: ${userId}`)
+      throw new NotFoundException('Task not found')
+    }
+
     const updates: Partial<Task> = {}
+    const changes: string[] = []
 
-    if (updateTaskDto.title !== undefined) {
+    if (
+      updateTaskDto.title !== undefined &&
+      updateTaskDto.title !== existingTask.title
+    ) {
       updates.title = updateTaskDto.title
+      changes.push('title')
     }
 
-    if (updateTaskDto.description !== undefined) {
+    if (
+      updateTaskDto.description !== undefined &&
+      updateTaskDto.description !== existingTask.description
+    ) {
       updates.description = updateTaskDto.description
+      changes.push('description')
     }
 
-    if (updateTaskDto.status !== undefined) {
+    if (
+      updateTaskDto.status !== undefined &&
+      updateTaskDto.status !== existingTask.status
+    ) {
       updates.status = updateTaskDto.status
+      changes.push('status')
     }
 
-    if (updateTaskDto.priority !== undefined) {
+    if (
+      updateTaskDto.priority !== undefined &&
+      updateTaskDto.priority !== existingTask.priority
+    ) {
       updates.priority = updateTaskDto.priority
+      changes.push('priority')
     }
 
     if (updateTaskDto.deadline !== undefined) {
-      updates.deadline = new Date(updateTaskDto.deadline)
+      const newDeadline = new Date(updateTaskDto.deadline)
+      if (newDeadline.getTime() !== existingTask.deadline?.getTime()) {
+        updates.deadline = newDeadline
+        changes.push('deadline')
+      }
     }
 
     const updatedTask = await this.tasksRepository.updateTask(
@@ -128,6 +178,24 @@ export class TasksService {
 
     this.logger.log(`Task ${id} updated successfully`)
 
+    if (changes.length > 0) {
+      const event: TaskUpdatedEvent = {
+        taskId: updatedTask.id,
+        updatedById: userId,
+        updatedAt: updatedTask.updatedAt,
+        changes,
+        ...(updates.title && { title: updates.title }),
+        ...(updates.description !== undefined && {
+          description: updates.description,
+        }),
+        ...(updates.status && { status: updates.status }),
+        ...(updates.priority && { priority: updates.priority }),
+        ...(updates.deadline && { deadline: updates.deadline }),
+      }
+
+      await this.eventsPublisher.publishTaskUpdated(event)
+    }
+
     return this.mapToResponseDto(updatedTask)
   }
 
@@ -142,6 +210,14 @@ export class TasksService {
     }
 
     this.logger.log(`Task ${id} deleted successfully`)
+
+    const event: TaskDeletedEvent = {
+      taskId: id,
+      deletedById: userId,
+      deletedAt: new Date(),
+    }
+
+    await this.eventsPublisher.publishTaskDeleted(event)
   }
 
   private mapToResponseDto(task: Task): TaskResponseDto {
