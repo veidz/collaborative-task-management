@@ -4,7 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
+  OneToMany,
 } from 'typeorm'
+import { Comment } from '../../comments/entities/comment.entity'
+import { TaskAssignment } from './task-assignment.entity'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
 
@@ -13,10 +17,10 @@ export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ length: 255 })
   title: string
 
-  @Column({ type: 'text', nullable: true })
+  @Column('text', { nullable: true })
   description: string | null
 
   @Column({
@@ -24,6 +28,7 @@ export class Task {
     enum: TaskStatus,
     default: TaskStatus.TODO,
   })
+  @Index()
   status: TaskStatus
 
   @Column({
@@ -31,17 +36,25 @@ export class Task {
     enum: TaskPriority,
     default: TaskPriority.MEDIUM,
   })
+  @Index()
   priority: TaskPriority
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column('timestamp', { nullable: true })
   deadline: Date | null
 
-  @Column({ type: 'uuid' })
-  createdById: string
+  @Column('uuid', { name: 'created_by' })
+  @Index()
+  createdBy: string
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date
+
+  @OneToMany(() => Comment, (comment) => comment.task)
+  comments: Comment[]
+
+  @OneToMany(() => TaskAssignment, (assignment) => assignment.task)
+  assignments: TaskAssignment[]
 }

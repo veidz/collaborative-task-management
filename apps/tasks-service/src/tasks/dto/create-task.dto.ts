@@ -1,11 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import {
+  IsNotEmpty,
   IsString,
-  IsEnum,
   IsOptional,
-  MinLength,
-  MaxLength,
+  IsEnum,
   IsDateString,
+  MaxLength,
 } from 'class-validator'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
@@ -14,16 +14,15 @@ export class CreateTaskDto {
   @ApiProperty({
     example: 'Implement user authentication',
     description: 'Task title',
-    minLength: 3,
     maxLength: 255,
   })
   @IsString()
-  @MinLength(3)
+  @IsNotEmpty()
   @MaxLength(255)
   title: string
 
   @ApiPropertyOptional({
-    example: 'Add JWT authentication with refresh tokens',
+    example: 'Implement JWT-based authentication with refresh tokens',
     description: 'Task description',
   })
   @IsString()
@@ -42,7 +41,7 @@ export class CreateTaskDto {
 
   @ApiPropertyOptional({
     enum: TaskPriority,
-    example: TaskPriority.MEDIUM,
+    example: TaskPriority.HIGH,
     description: 'Task priority',
     default: TaskPriority.MEDIUM,
   })
@@ -51,10 +50,10 @@ export class CreateTaskDto {
   priority?: TaskPriority
 
   @ApiPropertyOptional({
-    example: '2025-10-10T12:00:00Z',
-    description: 'Task deadline (ISO 8601)',
+    example: '2025-12-31T23:59:59.000Z',
+    description: 'Task deadline',
   })
   @IsDateString()
   @IsOptional()
-  deadline?: string
+  deadline?: Date
 }

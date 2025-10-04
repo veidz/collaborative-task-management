@@ -1,4 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty } from '@nestjs/swagger'
+import { UserAssigneeDto } from './user-assignee.dto'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
 
@@ -15,8 +16,8 @@ export class TaskResponseDto {
   })
   title: string
 
-  @ApiPropertyOptional({
-    example: 'Add JWT authentication with refresh tokens',
+  @ApiProperty({
+    example: 'Implement JWT-based authentication with refresh tokens',
     description: 'Task description',
     nullable: true,
   })
@@ -31,13 +32,13 @@ export class TaskResponseDto {
 
   @ApiProperty({
     enum: TaskPriority,
-    example: TaskPriority.MEDIUM,
+    example: TaskPriority.HIGH,
     description: 'Task priority',
   })
   priority: TaskPriority
 
-  @ApiPropertyOptional({
-    example: '2025-10-10T12:00:00.000Z',
+  @ApiProperty({
+    example: '2025-12-31T23:59:59.000Z',
     description: 'Task deadline',
     nullable: true,
   })
@@ -45,19 +46,25 @@ export class TaskResponseDto {
 
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'User ID who created the task',
+    description: 'User who created the task',
   })
-  createdById: string
+  createdBy: string
 
   @ApiProperty({
-    example: '2025-10-03T00:17:30.000Z',
-    description: 'Task creation timestamp',
+    type: [UserAssigneeDto],
+    description: 'Assigned users',
+  })
+  assignees: UserAssigneeDto[]
+
+  @ApiProperty({
+    example: '2025-10-03T14:32:33.000Z',
+    description: 'Creation timestamp',
   })
   createdAt: Date
 
   @ApiProperty({
-    example: '2025-10-03T00:17:30.000Z',
-    description: 'Task last update timestamp',
+    example: '2025-10-03T15:45:12.000Z',
+    description: 'Last update timestamp',
   })
   updatedAt: Date
 }

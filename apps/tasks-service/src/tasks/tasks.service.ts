@@ -1,26 +1,26 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { TasksRepository } from './tasks.repository'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { Task } from './entities/task.entity'
+import { TaskAssignment } from './entities/task-assignment.entity'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { UpdateTaskDto } from './dto/update-task.dto'
 import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
 import { TaskResponseDto } from './dto/task-response.dto'
 import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
+import { EventsPublisherService } from '../events/events-publisher.service'
 import { TaskStatus } from './enums/task-status.enum'
 import { TaskPriority } from './enums/task-priority.enum'
-import { Task } from './entities/task.entity'
-import { EventsPublisherService } from '../events/events-publisher.service'
-import {
-  TaskCreatedEvent,
-  TaskDeletedEvent,
-  TaskUpdatedEvent,
-} from 'src/events/interfaces/task-events.interface'
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
 
   constructor(
-    private readonly tasksRepository: TasksRepository,
+    @InjectRepository(Task)
+    private readonly tasksRepository: Repository<Task>,
+    @InjectRepository(TaskAssignment)
+    readonly assignmentsRepository: Repository<TaskAssignment>,
     private readonly eventsPublisher: EventsPublisherService,
   ) {}
 
@@ -30,33 +30,30 @@ export class TasksService {
   ): Promise<TaskResponseDto> {
     this.logger.log(`Creating task for user: ${userId}`)
 
-    const task = this.tasksRepository.create({
-      title: createTaskDto.title,
-      description: createTaskDto.description,
-      status: createTaskDto.status || TaskStatus.TODO,
-      priority: createTaskDto.priority || TaskPriority.MEDIUM,
-      deadline: createTaskDto.deadline
-        ? new Date(createTaskDto.deadline)
-        : undefined,
-      createdById: userId,
-    })
+    const task = new Task()
+    task.title = createTaskDto.title
+    task.description = createTaskDto.description || null
+    task.status = createTaskDto.status || TaskStatus.TODO
+    task.priority = createTaskDto.priority || TaskPriority.MEDIUM
+    task.deadline = createTaskDto.deadline
+      ? new Date(createTaskDto.deadline)
+      : null
+    task.createdBy = userId
 
     const savedTask = await this.tasksRepository.save(task)
 
-    this.logger.log(`Task created successfully: ${savedTask.id}`)
+    this.logger.log(`Task created: ${savedTask.id}`)
 
-    const event: TaskCreatedEvent = {
+    await this.eventsPublisher.publishTaskCreated({
       taskId: savedTask.id,
       title: savedTask.title,
       description: savedTask.description,
       status: savedTask.status,
       priority: savedTask.priority,
       deadline: savedTask.deadline,
-      createdById: savedTask.createdById,
+      createdById: savedTask.createdBy,
       createdAt: savedTask.createdAt,
-    }
-
-    await this.eventsPublisher.publishTaskCreated(event)
+    })
 
     return this.mapToResponseDto(savedTask)
   }
@@ -65,20 +62,28 @@ export class TasksService {
     query: GetTasksQueryDto,
     userId: string,
   ): Promise<PaginatedTasksResponseDto> {
-    this.logger.log(
-      `Fetching tasks for user: ${userId} with filters: ${JSON.stringify(query)}`,
-    )
+    this.logger.log(`Fetching tasks for user: ${userId}`)
 
-    const page = query.page ?? 1
-    const limit = query.limit ?? 10
+    const { page = 1, limit = 10, status, priority } = query
+    const skip = (page - 1) * limit
 
-    const [tasks, total] = await this.tasksRepository.findAllByUser(
-      userId,
-      query.status,
-      query.priority,
-      page,
-      limit,
-    )
+    const queryBuilder = this.tasksRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.assignments', 'assignment')
+      .where('task.createdBy = :userId', { userId })
+      .orderBy('task.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+
+    if (status) {
+      queryBuilder.andWhere('task.status = :status', { status })
+    }
+
+    if (priority) {
+      queryBuilder.andWhere('task.priority = :priority', { priority })
+    }
+
+    const [tasks, total] = await queryBuilder.getManyAndCount()
 
     const totalPages = Math.ceil(total / limit)
 
@@ -93,17 +98,20 @@ export class TasksService {
     }
   }
 
-  async findById(id: string, userId: string): Promise<TaskResponseDto> {
+  async findOne(id: string, userId: string): Promise<TaskResponseDto> {
     this.logger.log(`Fetching task ${id} for user: ${userId}`)
 
-    const task = await this.tasksRepository.findByIdAndUser(id, userId)
+    const task = await this.tasksRepository.findOne({
+      where: { id, createdBy: userId },
+      relations: ['assignments'],
+    })
 
     if (!task) {
-      this.logger.warn(`Task ${id} not found or not owned by user: ${userId}`)
+      this.logger.warn(`Task ${id} not found for user: ${userId}`)
       throw new NotFoundException('Task not found')
     }
 
-    this.logger.log(`Task ${id} retrieved successfully`)
+    this.logger.log(`Task ${id} found`)
 
     return this.mapToResponseDto(task)
   }
@@ -115,109 +123,115 @@ export class TasksService {
   ): Promise<TaskResponseDto> {
     this.logger.log(`Updating task ${id} for user: ${userId}`)
 
-    const existingTask = await this.tasksRepository.findByIdAndUser(id, userId)
+    const task = await this.tasksRepository.findOne({
+      where: { id, createdBy: userId },
+      relations: ['assignments'],
+    })
 
-    if (!existingTask) {
-      this.logger.warn(`Task ${id} not found or not owned by user: ${userId}`)
+    if (!task) {
+      this.logger.warn(`Task ${id} not found for user: ${userId}`)
       throw new NotFoundException('Task not found')
     }
 
-    const updates: Partial<Task> = {}
     const changes: string[] = []
 
     if (
       updateTaskDto.title !== undefined &&
-      updateTaskDto.title !== existingTask.title
+      updateTaskDto.title !== task.title
     ) {
-      updates.title = updateTaskDto.title
+      task.title = updateTaskDto.title
       changes.push('title')
     }
 
     if (
       updateTaskDto.description !== undefined &&
-      updateTaskDto.description !== existingTask.description
+      updateTaskDto.description !== task.description
     ) {
-      updates.description = updateTaskDto.description
+      task.description = updateTaskDto.description || null
       changes.push('description')
     }
 
     if (
       updateTaskDto.status !== undefined &&
-      updateTaskDto.status !== existingTask.status
+      updateTaskDto.status !== task.status
     ) {
-      updates.status = updateTaskDto.status
+      task.status = updateTaskDto.status
       changes.push('status')
     }
 
     if (
       updateTaskDto.priority !== undefined &&
-      updateTaskDto.priority !== existingTask.priority
+      updateTaskDto.priority !== task.priority
     ) {
-      updates.priority = updateTaskDto.priority
+      task.priority = updateTaskDto.priority
       changes.push('priority')
     }
 
     if (updateTaskDto.deadline !== undefined) {
-      const newDeadline = new Date(updateTaskDto.deadline)
-      if (newDeadline.getTime() !== existingTask.deadline?.getTime()) {
-        updates.deadline = newDeadline
+      const newDeadline = updateTaskDto.deadline
+        ? new Date(updateTaskDto.deadline)
+        : null
+      const oldDeadline = task.deadline
+
+      if (
+        (newDeadline === null && oldDeadline !== null) ||
+        (newDeadline !== null && oldDeadline === null) ||
+        (newDeadline !== null &&
+          oldDeadline !== null &&
+          newDeadline.getTime() !== oldDeadline.getTime())
+      ) {
+        task.deadline = newDeadline
         changes.push('deadline')
       }
     }
 
-    const updatedTask = await this.tasksRepository.updateTask(
-      id,
-      userId,
-      updates,
-    )
-
-    if (!updatedTask) {
-      this.logger.warn(`Task ${id} not found or not owned by user: ${userId}`)
-      throw new NotFoundException('Task not found')
+    if (changes.length === 0) {
+      this.logger.log(`No changes detected for task ${id}`)
+      return this.mapToResponseDto(task)
     }
 
-    this.logger.log(`Task ${id} updated successfully`)
+    const updatedTask = await this.tasksRepository.save(task)
 
-    if (changes.length > 0) {
-      const event: TaskUpdatedEvent = {
-        taskId: updatedTask.id,
-        updatedById: userId,
-        updatedAt: updatedTask.updatedAt,
-        changes,
-        ...(updates.title && { title: updates.title }),
-        ...(updates.description !== undefined && {
-          description: updates.description,
-        }),
-        ...(updates.status && { status: updates.status }),
-        ...(updates.priority && { priority: updates.priority }),
-        ...(updates.deadline && { deadline: updates.deadline }),
-      }
+    this.logger.log(`Task ${id} updated with changes: ${changes.join(', ')}`)
 
-      await this.eventsPublisher.publishTaskUpdated(event)
-    }
+    await this.eventsPublisher.publishTaskUpdated({
+      taskId: updatedTask.id,
+      title: updateTaskDto.title,
+      description: updateTaskDto.description,
+      status: updateTaskDto.status,
+      priority: updateTaskDto.priority,
+      deadline: updateTaskDto.deadline
+        ? new Date(updateTaskDto.deadline)
+        : undefined,
+      updatedById: userId,
+      updatedAt: updatedTask.updatedAt,
+      changes,
+    })
 
     return this.mapToResponseDto(updatedTask)
   }
 
-  async delete(id: string, userId: string): Promise<void> {
+  async remove(id: string, userId: string): Promise<void> {
     this.logger.log(`Deleting task ${id} for user: ${userId}`)
 
-    const deleted = await this.tasksRepository.deleteTask(id, userId)
+    const task = await this.tasksRepository.findOne({
+      where: { id, createdBy: userId },
+    })
 
-    if (!deleted) {
-      this.logger.warn(`Task ${id} not found or not owned by user: ${userId}`)
+    if (!task) {
+      this.logger.warn(`Task ${id} not found for user: ${userId}`)
       throw new NotFoundException('Task not found')
     }
 
-    this.logger.log(`Task ${id} deleted successfully`)
+    await this.tasksRepository.remove(task)
 
-    const event: TaskDeletedEvent = {
+    this.logger.log(`Task ${id} deleted`)
+
+    await this.eventsPublisher.publishTaskDeleted({
       taskId: id,
       deletedById: userId,
       deletedAt: new Date(),
-    }
-
-    await this.eventsPublisher.publishTaskDeleted(event)
+    })
   }
 
   private mapToResponseDto(task: Task): TaskResponseDto {
@@ -228,7 +242,15 @@ export class TasksService {
       status: task.status,
       priority: task.priority,
       deadline: task.deadline,
-      createdById: task.createdById,
+      createdBy: task.createdBy,
+      assignees:
+        task.assignments?.map((assignment) => ({
+          id: assignment.userId,
+          email: '',
+          username: '',
+          assignedAt: assignment.assignedAt,
+          assignedBy: assignment.assignedBy,
+        })) || [],
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
     }
