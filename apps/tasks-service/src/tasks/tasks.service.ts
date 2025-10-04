@@ -1,14 +1,23 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, In } from 'typeorm'
 import { Task } from './entities/task.entity'
 import { TaskAssignment } from './entities/task-assignment.entity'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { UpdateTaskDto } from './dto/update-task.dto'
 import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
+import { AssignUsersDto } from './dto/assign-users.dto'
+import { UnassignUsersDto } from './dto/unassign-users.dto'
 import { TaskResponseDto } from './dto/task-response.dto'
 import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
 import { EventsPublisherService } from '../events/events-publisher.service'
+import { AuthServiceClient } from '../common/clients/auth-service.client'
 import { TaskStatus } from './enums/task-status.enum'
 import { TaskPriority } from './enums/task-priority.enum'
 
@@ -20,8 +29,9 @@ export class TasksService {
     @InjectRepository(Task)
     private readonly tasksRepository: Repository<Task>,
     @InjectRepository(TaskAssignment)
-    readonly assignmentsRepository: Repository<TaskAssignment>,
+    private readonly assignmentsRepository: Repository<TaskAssignment>,
     private readonly eventsPublisher: EventsPublisherService,
+    private readonly authServiceClient: AuthServiceClient,
   ) {}
 
   async create(
@@ -42,6 +52,19 @@ export class TasksService {
 
     const savedTask = await this.tasksRepository.save(task)
 
+    if (createTaskDto.assigneeIds && createTaskDto.assigneeIds.length > 0) {
+      await this.assignUsersInternal(
+        savedTask.id,
+        createTaskDto.assigneeIds,
+        userId,
+      )
+    }
+
+    const taskWithAssignees = await this.tasksRepository.findOne({
+      where: { id: savedTask.id },
+      relations: ['assignments'],
+    })
+
     this.logger.log(`Task created: ${savedTask.id}`)
 
     await this.eventsPublisher.publishTaskCreated({
@@ -55,7 +78,7 @@ export class TasksService {
       createdAt: savedTask.createdAt,
     })
 
-    return this.mapToResponseDto(savedTask)
+    return this.mapToResponseDto(taskWithAssignees!)
   }
 
   async findAll(
@@ -64,7 +87,14 @@ export class TasksService {
   ): Promise<PaginatedTasksResponseDto> {
     this.logger.log(`Fetching tasks for user: ${userId}`)
 
-    const { page = 1, limit = 10, status, priority } = query
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      priority,
+      assignedToMe,
+      assignedTo,
+    } = query
     const skip = (page - 1) * limit
 
     const queryBuilder = this.tasksRepository
@@ -83,6 +113,14 @@ export class TasksService {
       queryBuilder.andWhere('task.priority = :priority', { priority })
     }
 
+    if (assignedToMe) {
+      queryBuilder.andWhere('assignment.userId = :userId', { userId })
+    }
+
+    if (assignedTo) {
+      queryBuilder.andWhere('assignment.userId = :assignedTo', { assignedTo })
+    }
+
     const [tasks, total] = await queryBuilder.getManyAndCount()
 
     const totalPages = Math.ceil(total / limit)
@@ -90,7 +128,7 @@ export class TasksService {
     this.logger.log(`Found ${total} tasks for user: ${userId}`)
 
     return {
-      data: tasks.map((task) => this.mapToResponseDto(task)),
+      data: await Promise.all(tasks.map((task) => this.mapToResponseDto(task))),
       total,
       page,
       limit,
@@ -102,13 +140,21 @@ export class TasksService {
     this.logger.log(`Fetching task ${id} for user: ${userId}`)
 
     const task = await this.tasksRepository.findOne({
-      where: { id, createdBy: userId },
+      where: { id },
       relations: ['assignments'],
     })
 
     if (!task) {
-      this.logger.warn(`Task ${id} not found for user: ${userId}`)
+      this.logger.warn(`Task ${id} not found`)
       throw new NotFoundException('Task not found')
+    }
+
+    const isCreator = task.createdBy === userId
+    const isAssignee = task.assignments?.some((a) => a.userId === userId)
+
+    if (!isCreator && !isAssignee) {
+      this.logger.warn(`User ${userId} is not authorized to view task ${id}`)
+      throw new ForbiddenException('You are not authorized to view this task')
     }
 
     this.logger.log(`Task ${id} found`)
@@ -124,13 +170,21 @@ export class TasksService {
     this.logger.log(`Updating task ${id} for user: ${userId}`)
 
     const task = await this.tasksRepository.findOne({
-      where: { id, createdBy: userId },
+      where: { id },
       relations: ['assignments'],
     })
 
     if (!task) {
-      this.logger.warn(`Task ${id} not found for user: ${userId}`)
+      this.logger.warn(`Task ${id} not found`)
       throw new NotFoundException('Task not found')
+    }
+
+    const isCreator = task.createdBy === userId
+    const isAssignee = task.assignments?.some((a) => a.userId === userId)
+
+    if (!isCreator && !isAssignee) {
+      this.logger.warn(`User ${userId} is not authorized to update task ${id}`)
+      throw new ForbiddenException('You are not authorized to update this task')
     }
 
     const changes: string[] = []
@@ -185,12 +239,25 @@ export class TasksService {
       }
     }
 
+    if (updateTaskDto.assigneeIds !== undefined) {
+      await this.assignmentsRepository.delete({ taskId: id })
+      if (updateTaskDto.assigneeIds.length > 0) {
+        await this.assignUsersInternal(id, updateTaskDto.assigneeIds, userId)
+      }
+      changes.push('assignees')
+    }
+
     if (changes.length === 0) {
       this.logger.log(`No changes detected for task ${id}`)
       return this.mapToResponseDto(task)
     }
 
     const updatedTask = await this.tasksRepository.save(task)
+
+    const taskWithAssignees = await this.tasksRepository.findOne({
+      where: { id },
+      relations: ['assignments'],
+    })
 
     this.logger.log(`Task ${id} updated with changes: ${changes.join(', ')}`)
 
@@ -208,7 +275,7 @@ export class TasksService {
       changes,
     })
 
-    return this.mapToResponseDto(updatedTask)
+    return this.mapToResponseDto(taskWithAssignees!)
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -234,7 +301,141 @@ export class TasksService {
     })
   }
 
-  private mapToResponseDto(task: Task): TaskResponseDto {
+  async assignUsers(
+    id: string,
+    assignUsersDto: AssignUsersDto,
+    userId: string,
+  ): Promise<TaskResponseDto> {
+    this.logger.log(`Assigning users to task ${id}`)
+
+    const task = await this.tasksRepository.findOne({
+      where: { id },
+      relations: ['assignments'],
+    })
+
+    if (!task) {
+      this.logger.warn(`Task ${id} not found`)
+      throw new NotFoundException('Task not found')
+    }
+
+    const isCreator = task.createdBy === userId
+    const isAssignee = task.assignments?.some((a) => a.userId === userId)
+
+    if (!isCreator && !isAssignee) {
+      this.logger.warn(
+        `User ${userId} is not authorized to assign users to task ${id}`,
+      )
+      throw new ForbiddenException(
+        'You are not authorized to assign users to this task',
+      )
+    }
+
+    await this.assignUsersInternal(id, assignUsersDto.userIds, userId)
+
+    const updatedTask = await this.tasksRepository.findOne({
+      where: { id },
+      relations: ['assignments'],
+    })
+
+    this.logger.log(`Users assigned to task ${id}`)
+
+    return this.mapToResponseDto(updatedTask!)
+  }
+
+  async unassignUsers(
+    id: string,
+    unassignUsersDto: UnassignUsersDto,
+    userId: string,
+  ): Promise<TaskResponseDto> {
+    this.logger.log(`Unassigning users from task ${id}`)
+
+    const task = await this.tasksRepository.findOne({
+      where: { id },
+      relations: ['assignments'],
+    })
+
+    if (!task) {
+      this.logger.warn(`Task ${id} not found`)
+      throw new NotFoundException('Task not found')
+    }
+
+    const isCreator = task.createdBy === userId
+    const isAssignee = task.assignments?.some((a) => a.userId === userId)
+
+    if (!isCreator && !isAssignee) {
+      this.logger.warn(
+        `User ${userId} is not authorized to unassign users from task ${id}`,
+      )
+      throw new ForbiddenException(
+        'You are not authorized to unassign users from this task',
+      )
+    }
+
+    await this.assignmentsRepository.delete({
+      taskId: id,
+      userId: In(unassignUsersDto.userIds),
+    })
+
+    const updatedTask = await this.tasksRepository.findOne({
+      where: { id },
+      relations: ['assignments'],
+    })
+
+    this.logger.log(`Users unassigned from task ${id}`)
+
+    return this.mapToResponseDto(updatedTask!)
+  }
+
+  private async assignUsersInternal(
+    taskId: string,
+    userIds: string[],
+    assignedBy: string,
+  ): Promise<void> {
+    const validUsers = await this.authServiceClient.validateUsers(userIds)
+
+    if (validUsers.size === 0) {
+      throw new BadRequestException('No valid user IDs provided')
+    }
+
+    const invalidIds = userIds.filter((id) => !validUsers.has(id))
+    if (invalidIds.length > 0) {
+      throw new BadRequestException(
+        `Invalid user IDs: ${invalidIds.join(', ')}`,
+      )
+    }
+
+    const existingAssignments = await this.assignmentsRepository.find({
+      where: { taskId },
+    })
+
+    const existingUserIds = new Set(existingAssignments.map((a) => a.userId))
+    const newUserIds = userIds.filter((id) => !existingUserIds.has(id))
+
+    if (newUserIds.length === 0) {
+      this.logger.log('All users already assigned')
+      return
+    }
+
+    const assignments = newUserIds.map((userId) => {
+      const assignment = new TaskAssignment()
+      assignment.taskId = taskId
+      assignment.userId = userId
+      assignment.assignedBy = assignedBy
+      return assignment
+    })
+
+    await this.assignmentsRepository.save(assignments)
+
+    this.logger.log(`Assigned ${newUserIds.length} users to task ${taskId}`)
+  }
+
+  private async mapToResponseDto(task: Task): Promise<TaskResponseDto> {
+    const assigneeIds = task.assignments?.map((a) => a.userId) || []
+    const validUsers =
+      assigneeIds.length > 0
+        ? await this.authServiceClient.validateUsers(assigneeIds)
+        : new Map()
+
     return {
       id: task.id,
       title: task.title,
@@ -244,13 +445,16 @@ export class TasksService {
       deadline: task.deadline,
       createdBy: task.createdBy,
       assignees:
-        task.assignments?.map((assignment) => ({
-          id: assignment.userId,
-          email: '',
-          username: '',
-          assignedAt: assignment.assignedAt,
-          assignedBy: assignment.assignedBy,
-        })) || [],
+        task.assignments?.map((assignment) => {
+          const user = validUsers.get(assignment.userId)
+          return {
+            id: assignment.userId,
+            email: user?.email || '',
+            username: user?.username || '',
+            assignedAt: assignment.assignedAt,
+            assignedBy: assignment.assignedBy,
+          }
+        }) || [],
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
     }

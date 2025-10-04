@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
-import { IsEnum, IsOptional, IsInt, Min, Max } from 'class-validator'
-import { Type } from 'class-transformer'
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  Max,
+  IsBoolean,
+  IsUUID,
+} from 'class-validator'
+import { Type, Transform } from 'class-transformer'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
 
@@ -22,6 +30,24 @@ export class GetTasksQueryDto {
   @IsEnum(TaskPriority)
   @IsOptional()
   priority?: TaskPriority
+
+  @ApiPropertyOptional({
+    description: 'Filter tasks assigned to current user',
+    example: false,
+    default: false,
+  })
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  @IsOptional()
+  assignedToMe?: boolean = false
+
+  @ApiPropertyOptional({
+    description: 'Filter tasks assigned to specific user',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID('4')
+  @IsOptional()
+  assignedTo?: string
 
   @ApiPropertyOptional({
     description: 'Page number',

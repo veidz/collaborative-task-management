@@ -1,13 +1,14 @@
 import {
   Controller,
-  Post,
   Get,
+  Post,
   Put,
   Delete,
   Body,
   Param,
   Query,
   UseGuards,
+  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
@@ -18,17 +19,16 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger'
+import { Request } from 'express'
 import { TasksService } from './tasks.service'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { UpdateTaskDto } from './dto/update-task.dto'
 import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
+import { AssignUsersDto } from './dto/assign-users.dto'
+import { UnassignUsersDto } from './dto/unassign-users.dto'
 import { TaskResponseDto } from './dto/task-response.dto'
 import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
-import {
-  CurrentUser,
-  CurrentUserData,
-} from '../common/decorators/current-user.decorator'
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -38,30 +38,29 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new task' })
+  @ApiOperation({ summary: 'Create a new task with optional assignees' })
   @ApiResponse({
     status: 201,
-    description: 'Task successfully created',
+    description: 'Task created successfully',
     type: TaskResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input or user IDs',
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - invalid or missing token',
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
-  })
   async create(
     @Body() createTaskDto: CreateTaskDto,
-    @CurrentUser() user: CurrentUserData,
+    @Req() req: Request,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.create(createTaskDto, user.id)
+    return this.tasksService.create(createTaskDto, req.user.id)
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all tasks for current user' })
+  @ApiOperation({ summary: 'Get all tasks for current user with filters' })
   @ApiResponse({
     status: 200,
     description: 'Tasks retrieved successfully',
@@ -73,9 +72,9 @@ export class TasksController {
   })
   async findAll(
     @Query() query: GetTasksQueryDto,
-    @CurrentUser() user: CurrentUserData,
+    @Req() req: Request,
   ): Promise<PaginatedTasksResponseDto> {
-    return this.tasksService.findAll(query, user.id)
+    return this.tasksService.findAll(query, req.user.id)
   }
 
   @Get(':id')
@@ -95,18 +94,23 @@ export class TasksController {
     description: 'Unauthorized - invalid or missing token',
   })
   @ApiResponse({
-    status: 404,
-    description: 'Task not found or not owned by user',
+    status: 403,
+    description: 'Forbidden - not authorized to view this task',
   })
-  async findById(
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+  })
+  async findOne(
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
+    @Req() req: Request,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.findById(id, user.id)
+    return this.tasksService.findOne(id, req.user.id)
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update task by ID' })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update task (replaces assignees if provided)' })
   @ApiParam({
     name: 'id',
     description: 'Task UUID',
@@ -118,28 +122,32 @@ export class TasksController {
     type: TaskResponseDto,
   })
   @ApiResponse({
+    status: 400,
+    description: 'Invalid input or user IDs',
+  })
+  @ApiResponse({
     status: 401,
     description: 'Unauthorized - invalid or missing token',
   })
   @ApiResponse({
-    status: 404,
-    description: 'Task not found or not owned by user',
+    status: 403,
+    description: 'Forbidden - not authorized to update this task',
   })
   @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
+    status: 404,
+    description: 'Task not found',
   })
   async update(
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
-    @CurrentUser() user: CurrentUserData,
+    @Req() req: Request,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.update(id, updateTaskDto, user.id)
+    return this.tasksService.update(id, updateTaskDto, req.user.id)
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete task by ID' })
+  @ApiOperation({ summary: 'Delete task (creator only)' })
   @ApiParam({
     name: 'id',
     description: 'Task UUID',
@@ -155,12 +163,81 @@ export class TasksController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Task not found or not owned by user',
+    description: 'Task not found',
   })
-  async delete(
+  async remove(@Param('id') id: string, @Req() req: Request): Promise<void> {
+    return this.tasksService.remove(id, req.user.id)
+  }
+
+  @Put(':id/assign')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Assign users to task (adds to existing assignees)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Task UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Users assigned successfully',
+    type: TaskResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid user IDs',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - not authorized to assign users',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+  })
+  async assignUsers(
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ): Promise<void> {
-    return this.tasksService.delete(id, user.id)
+    @Body() assignUsersDto: AssignUsersDto,
+    @Req() req: Request,
+  ): Promise<TaskResponseDto> {
+    return this.tasksService.assignUsers(id, assignUsersDto, req.user.id)
+  }
+
+  @Put(':id/unassign')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unassign users from task' })
+  @ApiParam({
+    name: 'id',
+    description: 'Task UUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Users unassigned successfully',
+    type: TaskResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - not authorized to unassign users',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+  })
+  async unassignUsers(
+    @Param('id') id: string,
+    @Body() unassignUsersDto: UnassignUsersDto,
+    @Req() req: Request,
+  ): Promise<TaskResponseDto> {
+    return this.tasksService.unassignUsers(id, unassignUsersDto, req.user.id)
   }
 }

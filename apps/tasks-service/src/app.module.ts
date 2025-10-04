@@ -6,6 +6,8 @@ import { HealthModule } from './health/health.module'
 import { TasksModule } from './tasks/tasks.module'
 import typeormConfig from './config/typeorm.config'
 import { CommentsModule } from './comments/comments.module'
+import { EventsModule } from './events/events.module'
+import { AuthModule } from './common/auth/auth.module'
 
 @Module({
   imports: [
@@ -18,8 +20,10 @@ import { CommentsModule } from './comments/comments.module'
     }),
     LoggerModule,
     HealthModule,
+    AuthModule,
     TasksModule,
     CommentsModule,
+    EventsModule,
   ],
 })
 export class AppModule {}
