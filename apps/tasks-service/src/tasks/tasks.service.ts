@@ -59,6 +59,7 @@ export class TasksService {
         savedTask.id,
         createTaskDto.assigneeIds,
         userId,
+        false, // Don't check for existing since this is a new task
       )
       assigneeIds.push(...createTaskDto.assigneeIds)
     }
@@ -244,13 +245,51 @@ export class TasksService {
       }
     }
 
+    // Handle assignee updates
     if (updateTaskDto.assigneeIds !== undefined) {
-      await this.assignmentsRepository.delete({ taskId: id })
-      if (updateTaskDto.assigneeIds.length > 0) {
-        await this.assignUsersInternal(id, updateTaskDto.assigneeIds, userId)
+      const currentAssigneeIds = task.assignments?.map((a) => a.userId) || []
+      const newAssigneeIds = updateTaskDto.assigneeIds
+
+      // Validate new user IDs
+      if (newAssigneeIds.length > 0) {
+        const validUsers =
+          await this.authServiceClient.validateUsers(newAssigneeIds)
+        const invalidIds = newAssigneeIds.filter((id) => !validUsers.has(id))
+        if (invalidIds.length > 0) {
+          throw new BadRequestException(
+            `Invalid user IDs: ${invalidIds.join(', ')}`,
+          )
+        }
       }
-      assigneeIds = updateTaskDto.assigneeIds
-      changes.push('assignees')
+
+      // Only update if there are actual changes
+      const assigneesChanged =
+        currentAssigneeIds.length !== newAssigneeIds.length ||
+        !currentAssigneeIds.every((id) => newAssigneeIds.includes(id))
+
+      if (assigneesChanged) {
+        // Delete all current assignments
+        await this.assignmentsRepository.delete({ taskId: id })
+
+        // Add new assignments
+        if (newAssigneeIds.length > 0) {
+          const assignments = newAssigneeIds.map((assigneeId) => {
+            const assignment = new TaskAssignment()
+            assignment.taskId = id
+            assignment.userId = assigneeId
+            assignment.assignedBy = userId
+            return assignment
+          })
+          await this.assignmentsRepository.save(assignments)
+        }
+
+        assigneeIds = newAssigneeIds
+        changes.push('assignees')
+
+        this.logger.log(
+          `Task ${id} assignees updated: ${currentAssigneeIds.length} -> ${newAssigneeIds.length}`,
+        )
+      }
     }
 
     if (changes.length === 0) {
@@ -345,7 +384,7 @@ export class TasksService {
     )
 
     if (newUserIds.length > 0) {
-      await this.assignUsersInternal(id, newUserIds, userId)
+      await this.assignUsersInternal(id, newUserIds, userId, true)
 
       await this.eventsPublisher.publishTaskAssigned({
         taskId: id,
@@ -420,6 +459,7 @@ export class TasksService {
     taskId: string,
     userIds: string[],
     assignedBy: string,
+    checkExisting: boolean = true,
   ): Promise<void> {
     const validUsers = await this.authServiceClient.validateUsers(userIds)
 
@@ -434,16 +474,21 @@ export class TasksService {
       )
     }
 
-    const existingAssignments = await this.assignmentsRepository.find({
-      where: { taskId },
-    })
+    let newUserIds = userIds
 
-    const existingUserIds = new Set(existingAssignments.map((a) => a.userId))
-    const newUserIds = userIds.filter((id) => !existingUserIds.has(id))
+    // Only check for existing assignments if requested
+    if (checkExisting) {
+      const existingAssignments = await this.assignmentsRepository.find({
+        where: { taskId },
+      })
 
-    if (newUserIds.length === 0) {
-      this.logger.log('All users already assigned')
-      return
+      const existingUserIds = new Set(existingAssignments.map((a) => a.userId))
+      newUserIds = userIds.filter((id) => !existingUserIds.has(id))
+
+      if (newUserIds.length === 0) {
+        this.logger.log('All users already assigned')
+        return
+      }
     }
 
     const assignments = newUserIds.map((userId) => {

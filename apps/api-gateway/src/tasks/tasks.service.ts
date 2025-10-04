@@ -4,6 +4,7 @@ import {
   OnModuleInit,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
@@ -13,12 +14,8 @@ import { AxiosError } from 'axios'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { UpdateTaskDto } from './dto/update-task.dto'
 import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
-import { TaskResponseDto } from './dto/task-response.dto'
-import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
-import { CreateCommentDto } from './dto/create-comment.dto'
-import { GetCommentsQueryDto } from './dto/get-comments-query.dto'
-import { CommentResponseDto } from './dto/comment-response.dto'
-import { PaginatedCommentsResponseDto } from './dto/paginated-comment-response.dto'
+import { AssignUsersDto } from './dto/assign-users.dto'
+import { UnassignUsersDto } from './dto/unassign-users.dto'
 
 @Injectable()
 export class TasksService implements OnModuleInit {
@@ -44,184 +41,145 @@ export class TasksService implements OnModuleInit {
     this.logger.log(`Tasks service URL configured: ${this.tasksServiceUrl}`)
   }
 
-  async create(
-    createTaskDto: CreateTaskDto,
-    token: string,
-  ): Promise<TaskResponseDto> {
-    this.logger.log('Proxying create task request to tasks-service')
+  async create(createTaskDto: CreateTaskDto, userId: string) {
+    this.logger.log(`Proxying create task request for user: ${userId}`)
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post<TaskResponseDto>(
-          `${this.tasksServiceUrl}/tasks`,
-          createTaskDto,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        ),
+        this.httpService.post(`${this.tasksServiceUrl}/tasks`, createTaskDto, {
+          headers: { 'x-user-id': userId },
+        }),
       )
 
-      this.logger.log('Task created successfully via proxy')
+      this.logger.log(`Task created successfully for user: ${userId}`)
       return response.data
     } catch (error) {
-      this.handleError(error, 'Failed to create task')
+      this.handleError(error, 'Create task failed')
     }
   }
 
-  async findAll(
-    query: GetTasksQueryDto,
-    token: string,
-  ): Promise<PaginatedTasksResponseDto> {
-    this.logger.log('Proxying get all tasks request to tasks-service')
+  async findAll(query: GetTasksQueryDto, userId: string) {
+    this.logger.log(`Proxying get tasks request for user: ${userId}`)
 
     try {
       const response = await firstValueFrom(
-        this.httpService.get<PaginatedTasksResponseDto>(
-          `${this.tasksServiceUrl}/tasks`,
-          {
-            params: query,
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        ),
+        this.httpService.get(`${this.tasksServiceUrl}/tasks`, {
+          params: query,
+          headers: { 'x-user-id': userId },
+        }),
       )
 
-      this.logger.log('Tasks retrieved successfully via proxy')
+      this.logger.log(`Tasks retrieved successfully for user: ${userId}`)
       return response.data
     } catch (error) {
-      this.handleError(error, 'Failed to get tasks')
+      this.handleError(error, 'Get tasks failed')
     }
   }
 
-  async findById(id: string, token: string): Promise<TaskResponseDto> {
-    this.logger.log(`Proxying get task ${id} request to tasks-service`)
+  async findOne(id: string, userId: string) {
+    this.logger.log(`Proxying get task ${id} request for user: ${userId}`)
 
     try {
       const response = await firstValueFrom(
-        this.httpService.get<TaskResponseDto>(
-          `${this.tasksServiceUrl}/tasks/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        ),
+        this.httpService.get(`${this.tasksServiceUrl}/tasks/${id}`, {
+          headers: { 'x-user-id': userId },
+        }),
       )
 
-      this.logger.log(`Task ${id} retrieved successfully via proxy`)
+      this.logger.log(`Task ${id} retrieved successfully`)
       return response.data
     } catch (error) {
-      this.handleError(error, `Failed to get task ${id}`)
+      this.handleError(error, `Get task ${id} failed`)
     }
   }
 
-  async update(
-    id: string,
-    updateTaskDto: UpdateTaskDto,
-    token: string,
-  ): Promise<TaskResponseDto> {
-    this.logger.log(`Proxying update task ${id} request to tasks-service`)
+  async update(id: string, updateTaskDto: UpdateTaskDto, userId: string) {
+    this.logger.log(`Proxying update task ${id} request for user: ${userId}`)
 
     try {
       const response = await firstValueFrom(
-        this.httpService.put<TaskResponseDto>(
+        this.httpService.put(
           `${this.tasksServiceUrl}/tasks/${id}`,
           updateTaskDto,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { 'x-user-id': userId },
           },
         ),
       )
 
-      this.logger.log(`Task ${id} updated successfully via proxy`)
+      this.logger.log(`Task ${id} updated successfully`)
       return response.data
     } catch (error) {
-      this.handleError(error, `Failed to update task ${id}`)
+      this.handleError(error, `Update task ${id} failed`)
     }
   }
 
-  async delete(id: string, token: string): Promise<void> {
-    this.logger.log(`Proxying delete task ${id} request to tasks-service`)
+  async remove(id: string, userId: string) {
+    this.logger.log(`Proxying delete task ${id} request for user: ${userId}`)
 
     try {
       await firstValueFrom(
         this.httpService.delete(`${this.tasksServiceUrl}/tasks/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { 'x-user-id': userId },
         }),
       )
 
-      this.logger.log(`Task ${id} deleted successfully via proxy`)
+      this.logger.log(`Task ${id} deleted successfully`)
+      return
     } catch (error) {
-      this.handleError(error, `Failed to delete task ${id}`)
+      this.handleError(error, `Delete task ${id} failed`)
     }
   }
 
-  async createComment(
-    taskId: string,
-    createCommentDto: CreateCommentDto,
-    token: string,
-  ): Promise<CommentResponseDto> {
-    this.logger.log(
-      `Proxying create comment on task ${taskId} request to tasks-service`,
-    )
+  async assignUsers(
+    id: string,
+    assignUsersDto: AssignUsersDto,
+    userId: string,
+  ) {
+    this.logger.log(`Proxying assign users to task ${id} for user: ${userId}`)
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post<CommentResponseDto>(
-          `${this.tasksServiceUrl}/tasks/${taskId}/comments`,
-          createCommentDto,
+        this.httpService.put(
+          `${this.tasksServiceUrl}/tasks/${id}/assign`,
+          assignUsersDto,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { 'x-user-id': userId },
           },
         ),
       )
 
-      this.logger.log(
-        `Comment created successfully on task ${taskId} via proxy`,
-      )
+      this.logger.log(`Users assigned to task ${id} successfully`)
       return response.data
     } catch (error) {
-      this.handleError(error, `Failed to create comment on task ${taskId}`)
+      this.handleError(error, `Assign users to task ${id} failed`)
     }
   }
 
-  async findComments(
-    taskId: string,
-    query: GetCommentsQueryDto,
-    token: string,
-  ): Promise<PaginatedCommentsResponseDto> {
+  async unassignUsers(
+    id: string,
+    unassignUsersDto: UnassignUsersDto,
+    userId: string,
+  ) {
     this.logger.log(
-      `Proxying get comments for task ${taskId} request to tasks-service`,
+      `Proxying unassign users from task ${id} for user: ${userId}`,
     )
 
     try {
       const response = await firstValueFrom(
-        this.httpService.get<PaginatedCommentsResponseDto>(
-          `${this.tasksServiceUrl}/tasks/${taskId}/comments`,
+        this.httpService.put(
+          `${this.tasksServiceUrl}/tasks/${id}/unassign`,
+          unassignUsersDto,
           {
-            params: query,
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { 'x-user-id': userId },
           },
         ),
       )
 
-      this.logger.log(
-        `Comments retrieved successfully for task ${taskId} via proxy`,
-      )
+      this.logger.log(`Users unassigned from task ${id} successfully`)
       return response.data
     } catch (error) {
-      this.handleError(error, `Failed to get comments for task ${taskId}`)
+      this.handleError(error, `Unassign users from task ${id} failed`)
     }
   }
 
@@ -232,16 +190,16 @@ export class TasksService implements OnModuleInit {
 
       this.logger.error(`${message}: ${responseMessage}`)
 
-      if (status === 400) {
-        throw new BadRequestException(responseMessage)
-      }
-
       if (status === 404) {
         throw new NotFoundException(responseMessage)
       }
 
-      if (status === 401 || status === 403) {
-        throw new BadRequestException('Unauthorized')
+      if (status === 403) {
+        throw new ForbiddenException(responseMessage)
+      }
+
+      if (status === 400) {
+        throw new BadRequestException(responseMessage)
       }
 
       throw new InternalServerErrorException(responseMessage)

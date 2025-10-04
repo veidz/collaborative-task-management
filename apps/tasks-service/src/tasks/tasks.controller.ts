@@ -7,19 +7,19 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
-  Req,
+  Headers,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
+  Logger,
 } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiParam,
+  ApiHeader,
 } from '@nestjs/swagger'
-import { Request } from 'express'
 import { TasksService } from './tasks.service'
 import { CreateTaskDto } from './dto/create-task.dto'
 import { UpdateTaskDto } from './dto/update-task.dto'
@@ -28,216 +28,236 @@ import { AssignUsersDto } from './dto/assign-users.dto'
 import { UnassignUsersDto } from './dto/unassign-users.dto'
 import { TaskResponseDto } from './dto/task-response.dto'
 import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 
 @ApiTags('Tasks')
 @Controller('tasks')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class TasksController {
+  private readonly logger = new Logger(TasksController.name)
+
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new task with optional assignees' })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a new task',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
+  })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
+  })
   @ApiResponse({
     status: 201,
     description: 'Task created successfully',
     type: TaskResponseDto,
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input or user IDs',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Missing user ID header' })
   async create(
     @Body() createTaskDto: CreateTaskDto,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.create(createTaskDto, req.user.id)
+    if (!userId) {
+      this.logger.warn('Create task request missing x-user-id header')
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Creating task for user: ${userId}`)
+    return this.tasksService.create(createTaskDto, userId)
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all tasks for current user with filters' })
+  @ApiOperation({
+    summary: 'Get all tasks with filters',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
+  })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
+  })
   @ApiResponse({
     status: 200,
     description: 'Tasks retrieved successfully',
     type: PaginatedTasksResponseDto,
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
+  @ApiResponse({ status: 401, description: 'Missing user ID header' })
   async findAll(
     @Query() query: GetTasksQueryDto,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<PaginatedTasksResponseDto> {
-    return this.tasksService.findAll(query, req.user.id)
+    if (!userId) {
+      this.logger.warn('Get tasks request missing x-user-id header')
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Getting tasks for user: ${userId}`)
+    return this.tasksService.findAll(query, userId)
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get task by ID' })
-  @ApiParam({
-    name: 'id',
-    description: 'Task UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+  @ApiOperation({
+    summary: 'Get task by ID',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
+  })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
   })
   @ApiResponse({
     status: 200,
     description: 'Task retrieved successfully',
     type: TaskResponseDto,
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - not authorized to view this task',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 401, description: 'Missing user ID header' })
   async findOne(
     @Param('id') id: string,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.findOne(id, req.user.id)
+    if (!userId) {
+      this.logger.warn(`Get task ${id} request missing x-user-id header`)
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Getting task ${id} for user: ${userId}`)
+    return this.tasksService.findOne(id, userId)
   }
 
   @Put(':id')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update task (replaces assignees if provided)' })
-  @ApiParam({
-    name: 'id',
-    description: 'Task UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+  @ApiOperation({
+    summary: 'Update task',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
+  })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
   })
   @ApiResponse({
     status: 200,
     description: 'Task updated successfully',
     type: TaskResponseDto,
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input or user IDs',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - not authorized to update this task',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 401, description: 'Missing user ID header' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not task owner' })
   async update(
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.update(id, updateTaskDto, req.user.id)
+    if (!userId) {
+      this.logger.warn(`Update task ${id} request missing x-user-id header`)
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Updating task ${id} for user: ${userId}`)
+    return this.tasksService.update(id, updateTaskDto, userId)
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete task (creator only)' })
-  @ApiParam({
-    name: 'id',
-    description: 'Task UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+  @ApiOperation({
+    summary: 'Delete task',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
   })
-  @ApiResponse({
-    status: 204,
-    description: 'Task deleted successfully',
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
-  async remove(@Param('id') id: string, @Req() req: Request): Promise<void> {
-    return this.tasksService.remove(id, req.user.id)
+  @ApiResponse({ status: 204, description: 'Task deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 401, description: 'Missing user ID header' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not task owner' })
+  async remove(
+    @Param('id') id: string,
+    @Headers('x-user-id') userId: string,
+  ): Promise<void> {
+    if (!userId) {
+      this.logger.warn(`Delete task ${id} request missing x-user-id header`)
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Deleting task ${id} for user: ${userId}`)
+    return this.tasksService.remove(id, userId)
   }
 
   @Put(':id/assign')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Assign users to task (adds to existing assignees)',
+    summary: 'Assign users to task',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
   })
-  @ApiParam({
-    name: 'id',
-    description: 'Task UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
   })
   @ApiResponse({
     status: 200,
     description: 'Users assigned successfully',
     type: TaskResponseDto,
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid user IDs',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - not authorized to assign users',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
+  @ApiResponse({ status: 400, description: 'Invalid user IDs' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 401, description: 'Missing user ID header' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not task owner' })
   async assignUsers(
     @Param('id') id: string,
     @Body() assignUsersDto: AssignUsersDto,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.assignUsers(id, assignUsersDto, req.user.id)
+    if (!userId) {
+      this.logger.warn(
+        `Assign users to task ${id} request missing x-user-id header`,
+      )
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Assigning users to task ${id} by user: ${userId}`)
+    return this.tasksService.assignUsers(id, assignUsersDto, userId)
   }
 
   @Put(':id/unassign')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Unassign users from task' })
-  @ApiParam({
-    name: 'id',
-    description: 'Task UUID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+  @ApiOperation({
+    summary: 'Unassign users from task',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
+  })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
   })
   @ApiResponse({
     status: 200,
     description: 'Users unassigned successfully',
     type: TaskResponseDto,
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - invalid or missing token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - not authorized to unassign users',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
+  @ApiResponse({ status: 400, description: 'Invalid user IDs' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiResponse({ status: 401, description: 'Missing user ID header' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not task owner' })
   async unassignUsers(
     @Param('id') id: string,
     @Body() unassignUsersDto: UnassignUsersDto,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<TaskResponseDto> {
-    return this.tasksService.unassignUsers(id, unassignUsersDto, req.user.id)
+    if (!userId) {
+      this.logger.warn(
+        `Unassign users from task ${id} request missing x-user-id header`,
+      )
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Unassigning users from task ${id} by user: ${userId}`)
+    return this.tasksService.unassignUsers(id, unassignUsersDto, userId)
   }
 }
