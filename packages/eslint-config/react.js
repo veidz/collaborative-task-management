@@ -4,8 +4,12 @@ import tsParser from '@typescript-eslint/parser'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
 import prettier from 'eslint-config-prettier'
+import globals from 'globals'
 
 export default [
+  {
+    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**'],
+  },
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
@@ -19,8 +23,8 @@ export default [
         },
       },
       globals: {
-        React: 'readonly',
-        JSX: 'readonly',
+        ...globals.browser,
+        ...globals.es2021,
       },
     },
     plugins: {
@@ -39,6 +43,7 @@ export default [
         'error',
         { argsIgnorePattern: '^_' },
       ],
+      'no-undef': 'off',
     },
     settings: {
       react: {
@@ -47,7 +52,4 @@ export default [
     },
   },
   prettier,
-  {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**'],
-  },
 ]

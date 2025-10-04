@@ -184,28 +184,28 @@ services:
     networks:
       - collaborative-task-management-network
 
-  # web:
-  #   build:
-  #     context: .
-  #     dockerfile: apps/web/Dockerfile
-  #     target: development
-  #   container_name: collaborative-task-management-web
-  #   restart: unless-stopped
-  #   command: pnpm dev
-  #   ports:
-  #     - '3000:3000'
-  #   environment:
-  #     VITE_API_URL: http://localhost:3001
-  #     VITE_WS_URL: ws://localhost:3001
-  #   volumes:
-  #     - ./apps/web:/app/apps/web
-  #     - /app/node_modules
-  #     - /app/apps/web/node_modules
-  #   depends_on:
-  #     api-gateway:
-  #       condition: service_healthy
-  #   networks:
-  #     - collaborative-task-management-network
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: development
+    container_name: collaborative-task-management-web
+    restart: unless-stopped
+    command: pnpm dev
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:3001
+      VITE_WS_URL: ws://localhost:3001
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/node_modules
+      - /app/apps/web/node_modules
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - collaborative-task-management-network
 
 volumes:
   postgres_data:
