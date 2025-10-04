@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { connect, Connection, Channel } from 'amqplib'
+import { setTimeout } from 'timers/promises'
 import {
   TaskCreatedEvent,
   TaskUpdatedEvent,
@@ -15,6 +16,8 @@ export class EventsPublisherService implements OnModuleInit {
   private connection: Connection | null = null
   private channel: Channel | null = null
   private readonly queueName = 'tasks_queue'
+  private readonly maxRetries = 10
+  private readonly retryDelay = 3000 // 3 seconds
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -25,19 +28,41 @@ export class EventsPublisherService implements OnModuleInit {
       throw new Error('RABBITMQ_URL is not defined in environment variables')
     }
 
+    await this.connectWithRetry(rabbitmqUrl)
+  }
+
+  private async connectWithRetry(
+    url: string,
+    attempt: number = 1,
+  ): Promise<void> {
     try {
-      this.logger.log('Connecting to RabbitMQ...')
-      this.connection = await connect(rabbitmqUrl)
+      this.logger.log(
+        `Connecting to RabbitMQ... (attempt ${attempt}/${this.maxRetries})`,
+      )
+
+      this.connection = await connect(url)
       this.channel = await this.connection.createChannel()
 
       await this.channel.assertQueue(this.queueName, { durable: true })
 
       this.logger.log('RabbitMQ client connected successfully')
     } catch (error) {
-      this.logger.error(
-        `Failed to connect to RabbitMQ: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+
+      if (attempt >= this.maxRetries) {
+        this.logger.error(
+          `Failed to connect to RabbitMQ after ${this.maxRetries} attempts: ${errorMsg}`,
+        )
+        throw error
+      }
+
+      this.logger.warn(
+        `Failed to connect to RabbitMQ (attempt ${attempt}/${this.maxRetries}): ${errorMsg}`,
       )
-      throw error
+      this.logger.log(`Retrying in ${this.retryDelay / 1000} seconds...`)
+
+      await setTimeout(this.retryDelay)
+      await this.connectWithRetry(url, attempt + 1)
     }
   }
 

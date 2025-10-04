@@ -133,6 +133,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: notifications_service
+      JWT_SECRET: jwt_secret
       RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
       LOG_LEVEL: info
     volumes:
