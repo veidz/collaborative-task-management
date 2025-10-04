@@ -5,37 +5,47 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
-  Req,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  UnauthorizedException,
+  Logger,
 } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiParam,
+  ApiHeader,
 } from '@nestjs/swagger'
-import { Request } from 'express'
 import { CommentsService } from './comments.service'
 import { CreateCommentDto } from './dto/create-comment.dto'
 import { GetCommentsQueryDto } from './dto/get-comments-query.dto'
 import { CommentResponseDto } from './dto/comment-response.dto'
 import { PaginatedCommentsResponseDto } from './dto/paginated-comments-response.dto'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 
 @ApiTags('Comments')
 @Controller('tasks/:taskId/comments')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class CommentsController {
+  private readonly logger = new Logger(CommentsController.name)
+
   constructor(private readonly commentsService: CommentsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a comment on a task' })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a comment on a task',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
+  })
   @ApiParam({
     name: 'taskId',
     description: 'Task UUID',
     example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
   })
   @ApiResponse({
     status: 201,
@@ -44,7 +54,7 @@ export class CommentsController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - invalid or missing token',
+    description: 'Unauthorized - missing user ID header',
   })
   @ApiResponse({
     status: 404,
@@ -53,17 +63,33 @@ export class CommentsController {
   async create(
     @Param('taskId') taskId: string,
     @Body() createCommentDto: CreateCommentDto,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<CommentResponseDto> {
-    return this.commentsService.create(taskId, createCommentDto, req.user.id)
+    if (!userId) {
+      this.logger.warn(
+        `Create comment for task ${taskId} missing x-user-id header`,
+      )
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Creating comment on task ${taskId} by user: ${userId}`)
+    return this.commentsService.create(taskId, createCommentDto, userId)
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all comments for a task' })
+  @ApiOperation({
+    summary: 'Get all comments for a task',
+    description: 'Internal endpoint - Gateway forwards with x-user-id header',
+  })
   @ApiParam({
     name: 'taskId',
     description: 'Task UUID',
     example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
   })
   @ApiResponse({
     status: 200,
@@ -72,7 +98,7 @@ export class CommentsController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - invalid or missing token',
+    description: 'Unauthorized - missing user ID header',
   })
   @ApiResponse({
     status: 404,
@@ -81,8 +107,16 @@ export class CommentsController {
   async findAll(
     @Param('taskId') taskId: string,
     @Query() query: GetCommentsQueryDto,
-    @Req() req: Request,
+    @Headers('x-user-id') userId: string,
   ): Promise<PaginatedCommentsResponseDto> {
-    return this.commentsService.findAll(taskId, query, req.user.id)
+    if (!userId) {
+      this.logger.warn(
+        `Get comments for task ${taskId} missing x-user-id header`,
+      )
+      throw new UnauthorizedException('User ID header required')
+    }
+
+    this.logger.log(`Getting comments for task ${taskId} by user: ${userId}`)
+    return this.commentsService.findAll(taskId, query, userId)
   }
 }
