@@ -6,6 +6,8 @@ import {
   MinLength,
   MaxLength,
   IsDateString,
+  IsArray,
+  IsUUID,
 } from 'class-validator'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
@@ -57,4 +59,14 @@ export class CreateTaskDto {
   @IsDateString()
   @IsOptional()
   deadline?: string
+
+  @ApiPropertyOptional({
+    description: 'Array of user IDs to assign to this task',
+    example: ['550e8400-e29b-41d4-a716-446655440000'],
+    type: [String],
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  assigneeIds?: string[]
 }

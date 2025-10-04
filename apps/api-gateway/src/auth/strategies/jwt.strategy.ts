@@ -7,22 +7,32 @@ export interface JwtPayload {
   sub: string
   email: string
   username: string
-  type: 'access' | 'refresh'
-  iat: number
-  exp: number
+  type: string
+  iat?: number
+  exp?: number
 }
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(readonly configService: ConfigService) {
+    const secret = configService.get<string>('JWT_SECRET')
+
+    if (!secret) {
+      throw new Error('JWT_SECRET is not defined in environment variables')
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: secret,
     })
   }
 
   async validate(payload: JwtPayload) {
+    if (!payload.sub || !payload.email || !payload.username) {
+      throw new UnauthorizedException('Invalid token payload')
+    }
+
     if (payload.type !== 'access') {
       throw new UnauthorizedException('Invalid token type')
     }

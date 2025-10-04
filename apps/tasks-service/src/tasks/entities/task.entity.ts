@@ -7,20 +7,22 @@ import {
   Index,
   OneToMany,
 } from 'typeorm'
-import { Comment } from '../../comments/entities/comment.entity'
-import { TaskAssignment } from './task-assignment.entity'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
+import { TaskAssignment } from './task-assignment.entity'
 
 @Entity('tasks')
+@Index(['createdBy'])
+@Index(['status'])
+@Index(['priority'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   title: string
 
-  @Column('text', { nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string | null
 
   @Column({
@@ -28,7 +30,6 @@ export class Task {
     enum: TaskStatus,
     default: TaskStatus.TODO,
   })
-  @Index()
   status: TaskStatus
 
   @Column({
@@ -36,25 +37,22 @@ export class Task {
     enum: TaskPriority,
     default: TaskPriority.MEDIUM,
   })
-  @Index()
   priority: TaskPriority
 
-  @Column('timestamp', { nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   deadline: Date | null
 
-  @Column('uuid', { name: 'created_by' })
-  @Index()
+  @Column('uuid', { name: 'createdById' })
   createdBy: string
 
-  @CreateDateColumn({ name: 'created_at' })
+  @OneToMany(() => TaskAssignment, (assignment) => assignment.task, {
+    cascade: true,
+  })
+  assignments: TaskAssignment[]
+
+  @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updatedAt' })
   updatedAt: Date
-
-  @OneToMany(() => Comment, (comment) => comment.task)
-  comments: Comment[]
-
-  @OneToMany(() => TaskAssignment, (assignment) => assignment.task)
-  assignments: TaskAssignment[]
 }

@@ -1,65 +1,64 @@
-import { ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsString,
   IsOptional,
   IsEnum,
   IsDateString,
-  MaxLength,
   IsArray,
   IsUUID,
 } from 'class-validator'
+import { ApiPropertyOptional } from '@nestjs/swagger'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({
-    example: 'Implement user authentication',
     description: 'Task title',
+    example: 'Implement user authentication',
+    minLength: 1,
     maxLength: 255,
   })
   @IsString()
   @IsOptional()
-  @MaxLength(255)
   title?: string
 
   @ApiPropertyOptional({
-    example: 'Implement JWT-based authentication with refresh tokens',
     description: 'Task description',
+    example: 'Implement JWT-based authentication with refresh tokens',
   })
   @IsString()
   @IsOptional()
   description?: string
 
   @ApiPropertyOptional({
+    description: 'Task status',
     enum: TaskStatus,
     example: TaskStatus.IN_PROGRESS,
-    description: 'Task status',
   })
   @IsEnum(TaskStatus)
   @IsOptional()
   status?: TaskStatus
 
   @ApiPropertyOptional({
+    description: 'Task priority',
     enum: TaskPriority,
     example: TaskPriority.HIGH,
-    description: 'Task priority',
   })
   @IsEnum(TaskPriority)
   @IsOptional()
   priority?: TaskPriority
 
   @ApiPropertyOptional({
-    example: '2025-12-31T23:59:59.000Z',
     description: 'Task deadline',
+    example: '2025-12-31T23:59:59Z',
   })
   @IsDateString()
   @IsOptional()
-  deadline?: Date
+  deadline?: string
 
   @ApiPropertyOptional({
-    example: ['550e8400-e29b-41d4-a716-446655440000'],
     description:
-      'Array of user IDs to assign (replaces all existing assignees)',
+      'Array of user IDs to assign to this task (replaces existing assignees)',
+    example: ['550e8400-e29b-41d4-a716-446655440000'],
     type: [String],
   })
   @IsArray()

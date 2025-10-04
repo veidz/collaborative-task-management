@@ -2,6 +2,38 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { TaskStatus } from '../enums/task-status.enum'
 import { TaskPriority } from '../enums/task-priority.enum'
 
+export class UserAssigneeDto {
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'User unique identifier',
+  })
+  id: string
+
+  @ApiProperty({
+    example: 'john.doe@example.com',
+    description: 'User email',
+  })
+  email: string
+
+  @ApiProperty({
+    example: 'johndoe',
+    description: 'Username',
+  })
+  username: string
+
+  @ApiProperty({
+    example: '2025-10-04T00:43:57.000Z',
+    description: 'Assignment timestamp',
+  })
+  assignedAt: Date
+
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'User who assigned',
+  })
+  assignedBy: string
+}
+
 export class TaskResponseDto {
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
@@ -47,7 +79,13 @@ export class TaskResponseDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
     description: 'User ID who created the task',
   })
-  createdById: string
+  createdBy: string
+
+  @ApiProperty({
+    type: [UserAssigneeDto],
+    description: 'Assigned users',
+  })
+  assignees: UserAssigneeDto[]
 
   @ApiProperty({
     example: '2025-10-03T00:17:30.000Z',

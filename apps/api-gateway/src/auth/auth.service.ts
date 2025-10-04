@@ -102,22 +102,22 @@ export class AuthService implements OnModuleInit {
     }
   }
 
-  async getProfile(token: string) {
-    this.logger.log('Proxying get profile request')
+  async getProfile(userId: string) {
+    this.logger.log(`Proxying profile request for user: ${userId}`)
 
     try {
       const response = await firstValueFrom(
         this.httpService.get(`${this.authServiceUrl}/auth/profile`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            'x-user-id': userId,
           },
         }),
       )
 
-      this.logger.log('Profile retrieved successfully')
+      this.logger.log(`Profile retrieved successfully for user: ${userId}`)
       return response.data
     } catch (error) {
-      this.handleError(error, 'Get profile failed', true)
+      this.handleError(error, `Get profile failed for user: ${userId}`, true)
     }
   }
 

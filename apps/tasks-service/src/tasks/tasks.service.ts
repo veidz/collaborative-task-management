@@ -52,12 +52,15 @@ export class TasksService {
 
     const savedTask = await this.tasksRepository.save(task)
 
+    const assigneeIds: string[] = []
+
     if (createTaskDto.assigneeIds && createTaskDto.assigneeIds.length > 0) {
       await this.assignUsersInternal(
         savedTask.id,
         createTaskDto.assigneeIds,
         userId,
       )
+      assigneeIds.push(...createTaskDto.assigneeIds)
     }
 
     const taskWithAssignees = await this.tasksRepository.findOne({
@@ -75,6 +78,7 @@ export class TasksService {
       priority: savedTask.priority,
       deadline: savedTask.deadline,
       createdById: savedTask.createdBy,
+      assigneeIds,
       createdAt: savedTask.createdAt,
     })
 
@@ -188,6 +192,7 @@ export class TasksService {
     }
 
     const changes: string[] = []
+    let assigneeIds: string[] | undefined
 
     if (
       updateTaskDto.title !== undefined &&
@@ -244,6 +249,7 @@ export class TasksService {
       if (updateTaskDto.assigneeIds.length > 0) {
         await this.assignUsersInternal(id, updateTaskDto.assigneeIds, userId)
       }
+      assigneeIds = updateTaskDto.assigneeIds
       changes.push('assignees')
     }
 
@@ -271,6 +277,7 @@ export class TasksService {
         ? new Date(updateTaskDto.deadline)
         : undefined,
       updatedById: userId,
+      assigneeIds,
       updatedAt: updatedTask.updatedAt,
       changes,
     })
@@ -330,7 +337,23 @@ export class TasksService {
       )
     }
 
-    await this.assignUsersInternal(id, assignUsersDto.userIds, userId)
+    const existingUserIds = new Set(
+      task.assignments?.map((a) => a.userId) || [],
+    )
+    const newUserIds = assignUsersDto.userIds.filter(
+      (id) => !existingUserIds.has(id),
+    )
+
+    if (newUserIds.length > 0) {
+      await this.assignUsersInternal(id, newUserIds, userId)
+
+      await this.eventsPublisher.publishTaskAssigned({
+        taskId: id,
+        assignedUserIds: newUserIds,
+        assignedBy: userId,
+        assignedAt: new Date(),
+      })
+    }
 
     const updatedTask = await this.tasksRepository.findOne({
       where: { id },
@@ -374,6 +397,13 @@ export class TasksService {
     await this.assignmentsRepository.delete({
       taskId: id,
       userId: In(unassignUsersDto.userIds),
+    })
+
+    await this.eventsPublisher.publishTaskUnassigned({
+      taskId: id,
+      unassignedUserIds: unassignUsersDto.userIds,
+      unassignedBy: userId,
+      unassignedAt: new Date(),
     })
 
     const updatedTask = await this.tasksRepository.findOne({

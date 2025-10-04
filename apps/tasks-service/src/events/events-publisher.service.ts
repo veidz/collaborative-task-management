@@ -6,6 +6,8 @@ import {
   TaskCreatedEvent,
   TaskUpdatedEvent,
   TaskDeletedEvent,
+  TaskAssignedEvent,
+  TaskUnassignedEvent,
   CommentCreatedEvent,
   TaskEventPattern,
 } from './interfaces/task-events.interface'
@@ -17,7 +19,7 @@ export class EventsPublisherService implements OnModuleInit {
   private channel: Channel | null = null
   private readonly queueName = 'tasks_queue'
   private readonly maxRetries = 10
-  private readonly retryDelay = 3000 // 3 seconds
+  private readonly retryDelay = 3000
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -112,6 +114,44 @@ export class EventsPublisherService implements OnModuleInit {
     } catch (error) {
       this.logger.error(
         `Failed to publish task.deleted event: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      )
+      throw error
+    }
+  }
+
+  async publishTaskAssigned(event: TaskAssignedEvent): Promise<void> {
+    try {
+      this.logger.log(
+        `Publishing task.assigned event for task: ${event.taskId}`,
+      )
+
+      await this.publishMessage(TaskEventPattern.TASK_ASSIGNED, event)
+
+      this.logger.log(
+        `task.assigned event published successfully for task: ${event.taskId}`,
+      )
+    } catch (error) {
+      this.logger.error(
+        `Failed to publish task.assigned event: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      )
+      throw error
+    }
+  }
+
+  async publishTaskUnassigned(event: TaskUnassignedEvent): Promise<void> {
+    try {
+      this.logger.log(
+        `Publishing task.unassigned event for task: ${event.taskId}`,
+      )
+
+      await this.publishMessage(TaskEventPattern.TASK_UNASSIGNED, event)
+
+      this.logger.log(
+        `task.unassigned event published successfully for task: ${event.taskId}`,
+      )
+    } catch (error) {
+      this.logger.error(
+        `Failed to publish task.unassigned event: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
       throw error
     }

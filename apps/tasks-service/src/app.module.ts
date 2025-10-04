@@ -8,6 +8,7 @@ import typeormConfig from './config/typeorm.config'
 import { CommentsModule } from './comments/comments.module'
 import { EventsModule } from './events/events.module'
 import { AuthModule } from './common/auth/auth.module'
+import { ClientsModule } from './common/clients/clients.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AuthModule } from './common/auth/auth.module'
     LoggerModule,
     HealthModule,
     AuthModule,
+    ClientsModule,
     TasksModule,
     CommentsModule,
     EventsModule,

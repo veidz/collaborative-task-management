@@ -5,16 +5,13 @@ import {
   Body,
   HttpCode,
   HttpStatus,
-  UseGuards,
   Headers,
   UnauthorizedException,
+  Logger,
+  Req,
 } from '@nestjs/common'
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger'
+import { Request } from 'express'
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
@@ -23,15 +20,12 @@ import { AuthResponseDto } from './dto/auth-response.dto'
 import { LoginResponseDto } from './dto/login-response.dto'
 import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto'
 import { ProfileResponseDto } from './dto/profile-response.dto'
-import { JwtAuthGuard } from './guards/jwt-auth.guard'
-import {
-  CurrentUser,
-  CurrentUserData,
-} from './decorators/current-user.decorator'
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name)
+
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
@@ -97,9 +91,17 @@ export class AuthController {
   }
 
   @Get('profile')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user profile (JWT)' })
+  @ApiOperation({
+    summary:
+      'Get user profile (Internal - called by Gateway with x-user-id header)',
+    description:
+      'This endpoint is called by the API Gateway which validates JWT and forwards user ID',
+  })
+  @ApiHeader({
+    name: 'x-user-id',
+    description: 'User ID from validated JWT (set by Gateway)',
+    required: true,
+  })
   @ApiResponse({
     status: 200,
     description: 'Profile retrieved successfully',
@@ -107,39 +109,26 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - invalid or missing token',
+    description: 'Missing user ID header',
   })
   @ApiResponse({
     status: 404,
     description: 'User not found',
   })
-  async getProfileWithJwt(
-    @CurrentUser() user: CurrentUserData,
-  ): Promise<ProfileResponseDto> {
-    return this.authService.getProfile(user.id)
-  }
-
-  @Get('profile')
-  @ApiOperation({ summary: 'Get user profile (Internal - Gateway only)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Profile retrieved successfully',
-    type: ProfileResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-  })
-  async getProfileInternal(
+  async getProfile(
     @Headers('x-user-id') userId: string,
+    @Req() req: Request,
   ): Promise<ProfileResponseDto> {
+    // Debug: Log all headers
+    this.logger.log(`All headers received: ${JSON.stringify(req.headers)}`)
+    this.logger.log(`x-user-id header value: ${userId}`)
+
     if (!userId) {
+      this.logger.warn('Profile request missing x-user-id header')
       throw new UnauthorizedException('User ID header required')
     }
+
+    this.logger.log(`Profile request received for user: ${userId}`)
     return this.authService.getProfile(userId)
   }
 }

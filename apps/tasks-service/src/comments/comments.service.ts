@@ -1,21 +1,23 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { CommentsRepository } from './comments.repository'
-import { TasksRepository } from '../tasks/tasks.repository'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { Comment } from './entities/comment.entity'
+import { Task } from '../tasks/entities/task.entity'
 import { CreateCommentDto } from './dto/create-comment.dto'
 import { GetCommentsQueryDto } from './dto/get-comments-query.dto'
 import { CommentResponseDto } from './dto/comment-response.dto'
 import { PaginatedCommentsResponseDto } from './dto/paginated-comments-response.dto'
-import { Comment } from './entities/comment.entity'
 import { EventsPublisherService } from '../events/events-publisher.service'
-import { CommentCreatedEvent } from 'src/events/interfaces/task-events.interface'
 
 @Injectable()
 export class CommentsService {
   private readonly logger = new Logger(CommentsService.name)
 
   constructor(
-    private readonly commentsRepository: CommentsRepository,
-    private readonly tasksRepository: TasksRepository,
+    @InjectRepository(Comment)
+    private readonly commentsRepository: Repository<Comment>,
+    @InjectRepository(Task)
+    private readonly tasksRepository: Repository<Task>,
     private readonly eventsPublisher: EventsPublisherService,
   ) {}
 
@@ -26,62 +28,60 @@ export class CommentsService {
   ): Promise<CommentResponseDto> {
     this.logger.log(`Creating comment on task ${taskId} by user: ${userId}`)
 
-    const task = await this.tasksRepository.findByIdAndUser(taskId, userId)
+    const task = await this.tasksRepository.findOne({
+      where: { id: taskId },
+    })
 
     if (!task) {
-      this.logger.warn(
-        `Task ${taskId} not found or not owned by user: ${userId}`,
-      )
+      this.logger.warn(`Task ${taskId} not found`)
       throw new NotFoundException('Task not found')
     }
 
-    const comment = this.commentsRepository.create({
-      content: createCommentDto.content,
-      taskId,
-      authorId: userId,
-    })
+    const comment = new Comment()
+    comment.content = createCommentDto.content
+    comment.taskId = taskId
+    comment.authorId = userId
 
     const savedComment = await this.commentsRepository.save(comment)
 
-    this.logger.log(`Comment created successfully: ${savedComment.id}`)
+    this.logger.log(`Comment created: ${savedComment.id}`)
 
-    const event: CommentCreatedEvent = {
+    await this.eventsPublisher.publishCommentCreated({
       commentId: savedComment.id,
-      content: savedComment.content,
       taskId: savedComment.taskId,
+      content: savedComment.content,
       authorId: savedComment.authorId,
       createdAt: savedComment.createdAt,
-    }
-
-    await this.eventsPublisher.publishCommentCreated(event)
+    })
 
     return this.mapToResponseDto(savedComment)
   }
 
-  async findByTask(
+  async findAll(
     taskId: string,
     query: GetCommentsQueryDto,
     userId: string,
   ): Promise<PaginatedCommentsResponseDto> {
-    this.logger.log(`Fetching comments for task ${taskId} by user: ${userId}`)
+    this.logger.log(`Fetching comments for task ${taskId}`)
 
-    const task = await this.tasksRepository.findByIdAndUser(taskId, userId)
+    const task = await this.tasksRepository.findOne({
+      where: { id: taskId, createdBy: userId },
+    })
 
     if (!task) {
-      this.logger.warn(
-        `Task ${taskId} not found or not owned by user: ${userId}`,
-      )
+      this.logger.warn(`Task ${taskId} not found for user: ${userId}`)
       throw new NotFoundException('Task not found')
     }
 
-    const page = query.page ?? 1
-    const limit = query.limit ?? 10
+    const { page = 1, limit = 10 } = query
+    const skip = (page - 1) * limit
 
-    const [comments, total] = await this.commentsRepository.findByTask(
-      taskId,
-      page,
-      limit,
-    )
+    const [comments, total] = await this.commentsRepository.findAndCount({
+      where: { taskId },
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    })
 
     const totalPages = Math.ceil(total / limit)
 

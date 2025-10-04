@@ -15,6 +15,11 @@
       "@packages/utils": ["../../packages/utils/dist"]
     }
   },
-  "include": ["src/**/*", "migrations/**/*"],
+  "include": [
+    "src/**/*",
+    "migrations/**/*",
+    "../api-gateway/src/common/types",
+    "../api-gateway/src/types"
+  ],
   "exclude": ["node_modules", "dist", "../../packages/*/src/**/*"]
 }

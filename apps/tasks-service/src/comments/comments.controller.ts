@@ -1,13 +1,11 @@
 import {
   Controller,
-  Post,
   Get,
+  Post,
   Body,
   Param,
   Query,
   UseGuards,
-  HttpCode,
-  HttpStatus,
   Req,
 } from '@nestjs/common'
 import {
@@ -33,7 +31,6 @@ export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a comment on a task' })
   @ApiParam({
     name: 'taskId',
@@ -42,7 +39,7 @@ export class CommentsController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Comment successfully created',
+    description: 'Comment created successfully',
     type: CommentResponseDto,
   })
   @ApiResponse({
@@ -51,11 +48,7 @@ export class CommentsController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Task not found or not owned by user',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
+    description: 'Task not found',
   })
   async create(
     @Param('taskId') taskId: string,
@@ -85,11 +78,11 @@ export class CommentsController {
     status: 404,
     description: 'Task not found',
   })
-  async findByTask(
+  async findAll(
     @Param('taskId') taskId: string,
     @Query() query: GetCommentsQueryDto,
     @Req() req: Request,
   ): Promise<PaginatedCommentsResponseDto> {
-    return this.commentsService.findByTask(taskId, query, req.user.id)
+    return this.commentsService.findAll(taskId, query, req.user.id)
   }
 }
