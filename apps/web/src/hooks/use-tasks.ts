@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { taskApi } from '@/lib/task-api'
-import { CreateTaskRequest, UpdateTaskRequest, TaskFilters } from '@/types/task'
+import {
+  CreateTaskRequest,
+  UpdateTaskRequest,
+  AssignUsersRequest,
+  UnassignUsersRequest,
+  TaskFilters,
+} from '@/types/task'
 
 export function useTasks(filters?: TaskFilters) {
   return useQuery({
@@ -48,6 +54,30 @@ export function useDeleteTask() {
     mutationFn: (id: string) => taskApi.deleteTask(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    },
+  })
+}
+
+export function useAssignUsers(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: AssignUsersRequest) => taskApi.assignUsers(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks', id] })
+    },
+  })
+}
+
+export function useUnassignUsers(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: UnassignUsersRequest) => taskApi.unassignUsers(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks', id] })
     },
   })
 }

@@ -4,19 +4,27 @@ import {
   Comment,
   CreateTaskRequest,
   UpdateTaskRequest,
+  AssignUsersRequest,
+  UnassignUsersRequest,
   CreateCommentRequest,
   TaskFilters,
+  PaginatedResponse,
 } from '@/types/task'
 
 export const taskApi = {
-  getTasks: async (filters?: TaskFilters): Promise<Task[]> => {
+  getTasks: async (filters?: TaskFilters): Promise<PaginatedResponse<Task>> => {
     const params = new URLSearchParams()
+
     if (filters?.status) params.append('status', filters.status)
     if (filters?.priority) params.append('priority', filters.priority)
-    if (filters?.assigneeId) params.append('assigneeId', filters.assigneeId)
-    if (filters?.search) params.append('search', filters.search)
+    if (filters?.assignedToMe !== undefined) {
+      params.append('assignedToMe', String(filters.assignedToMe))
+    }
+    if (filters?.assignedTo) params.append('assignedTo', filters.assignedTo)
+    if (filters?.page) params.append('page', String(filters.page))
+    if (filters?.limit) params.append('limit', String(filters.limit))
 
-    const { data } = await apiClient.get<Task[]>(
+    const { data } = await apiClient.get<PaginatedResponse<Task>>(
       `/tasks${params.toString() ? `?${params.toString()}` : ''}`,
     )
     return data
@@ -42,6 +50,28 @@ export const taskApi = {
 
   deleteTask: async (id: string): Promise<void> => {
     await apiClient.delete(`/tasks/${id}`)
+  },
+
+  assignUsers: async (
+    id: string,
+    assignData: AssignUsersRequest,
+  ): Promise<Task> => {
+    const { data } = await apiClient.put<Task>(
+      `/tasks/${id}/assign`,
+      assignData,
+    )
+    return data
+  },
+
+  unassignUsers: async (
+    id: string,
+    unassignData: UnassignUsersRequest,
+  ): Promise<Task> => {
+    const { data } = await apiClient.put<Task>(
+      `/tasks/${id}/unassign`,
+      unassignData,
+    )
+    return data
   },
 
   getComments: async (taskId: string): Promise<Comment[]> => {

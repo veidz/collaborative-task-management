@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
+import { TasksListPage } from '@/pages/tasks-list'
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -56,16 +57,7 @@ const tasksRoute = createRoute({
       throw redirect({ to: '/login' })
     }
   },
-  component: () => (
-    <div className='flex h-screen items-center justify-center'>
-      <div className='text-center'>
-        <h1 className='text-2xl font-bold'>Tasks Page</h1>
-        <p className='mt-2 text-muted-foreground'>
-          Protected route - coming soon
-        </p>
-      </div>
-    </div>
-  ),
+  component: TasksListPage,
 })
 
 export const routeTree = rootRoute.addChildren([

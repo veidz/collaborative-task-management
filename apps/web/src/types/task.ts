@@ -2,18 +2,20 @@ export enum TaskStatus {
   TODO = 'TODO',
   IN_PROGRESS = 'IN_PROGRESS',
   DONE = 'DONE',
+  CANCELLED = 'CANCELLED',
 }
 
 export enum TaskPriority {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
+  URGENT = 'URGENT',
 }
 
 export interface Task {
   id: string
   title: string
-  description: string
+  description?: string
   status: TaskStatus
   priority: TaskPriority
   deadline: string | null
@@ -46,7 +48,7 @@ export interface User {
 
 export interface CreateTaskRequest {
   title: string
-  description: string
+  description?: string
   status?: TaskStatus
   priority?: TaskPriority
   deadline?: string
@@ -62,6 +64,14 @@ export interface UpdateTaskRequest {
   assigneeIds?: string[]
 }
 
+export interface AssignUsersRequest {
+  userIds: string[]
+}
+
+export interface UnassignUsersRequest {
+  userIds: string[]
+}
+
 export interface CreateCommentRequest {
   content: string
 }
@@ -69,6 +79,18 @@ export interface CreateCommentRequest {
 export interface TaskFilters {
   status?: TaskStatus
   priority?: TaskPriority
-  assigneeId?: string
-  search?: string
+  assignedToMe?: boolean
+  assignedTo?: string
+  page?: number
+  limit?: number
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  meta: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
 }
