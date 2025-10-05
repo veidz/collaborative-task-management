@@ -13,6 +13,7 @@ import {
 import { TaskCard } from '@/components/tasks/task-card'
 import { TaskSkeleton } from '@/components/tasks/task-skeleton'
 import { EmptyState } from '@/components/tasks/empty-state'
+import { CreateTaskModal } from '@/components/tasks/create-task-modal'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
@@ -21,6 +22,7 @@ export function TasksListPage() {
     page: 1,
     limit: 12,
   })
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const { data, isLoading, error } = useTasks(filters)
   const tasks = data?.data
@@ -80,7 +82,7 @@ export function TasksListPage() {
           <h1 className='text-3xl font-bold'>Tasks</h1>
           <p className='text-muted-foreground'>Manage and track your tasks</p>
         </div>
-        <Button>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className='mr-2 h-4 w-4' />
           New Task
         </Button>
@@ -199,6 +201,11 @@ export function TasksListPage() {
           }
         />
       )}
+
+      <CreateTaskModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
     </div>
   )
 }

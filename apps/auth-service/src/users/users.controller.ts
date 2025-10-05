@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common'
+import { Controller, Post, Body, Get } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { ValidateUsersDto } from './dto/validate-users.dto'
 import { UserResponseDto } from './dto/user-response.dto'
@@ -24,5 +24,17 @@ export class UsersController {
     @Body() validateUsersDto: ValidateUsersDto,
   ): Promise<UserResponseDto[]> {
     return this.usersService.validateUsers(validateUsersDto.userIds)
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users retrieved successfully',
+    type: [UserResponseDto],
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async findAll(): Promise<UserResponseDto[]> {
+    return this.usersService.findAll()
   }
 }

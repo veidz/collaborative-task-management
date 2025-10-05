@@ -42,11 +42,25 @@ export function useAuth() {
     staleTime: 1000 * 60 * 5,
   })
 
+  const {
+    data: users,
+    isLoading: isLoadingUsers,
+    error: usersError,
+  } = useQuery({
+    queryKey: ['users'],
+    queryFn: authApi.getUsers,
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5,
+  })
+
   return {
     user,
     profile,
+    users,
     isAuthenticated,
     isLoadingProfile,
+    isLoadingUsers,
+    usersError,
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,

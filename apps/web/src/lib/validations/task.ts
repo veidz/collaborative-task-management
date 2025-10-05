@@ -9,7 +9,7 @@ export const createTaskSchema = z.object({
   description: z.string().optional(),
   status: z.nativeEnum(TaskStatus).default(TaskStatus.TODO),
   priority: z.nativeEnum(TaskPriority).default(TaskPriority.MEDIUM),
-  deadline: z.string().optional().nullable(),
+  deadline: z.string().optional(),
   assigneeIds: z.array(z.string().uuid()).default([]),
 })
 
@@ -22,7 +22,7 @@ export const updateTaskSchema = z.object({
   description: z.string().optional(),
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(TaskPriority).optional(),
-  deadline: z.string().optional().nullable(),
+  deadline: z.string().optional(),
   assigneeIds: z.array(z.string().uuid()).optional(),
 })
 

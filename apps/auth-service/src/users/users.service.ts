@@ -29,4 +29,17 @@ export class UsersService {
       username: user.username,
     }))
   }
+
+  async findAll(): Promise<UserResponseDto[]> {
+    const users = await this.usersRepository.find({
+      select: ['id', 'email', 'username', 'createdAt', 'updatedAt'],
+      order: { createdAt: 'DESC' },
+    })
+
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    }))
+  }
 }

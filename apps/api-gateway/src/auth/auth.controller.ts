@@ -76,4 +76,21 @@ export class AuthController {
 
     return this.authService.getProfile(req.user.id)
   }
+
+  @Get('users')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users retrieved successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getUsers(@Req() req: Request) {
+    this.logger.log(
+      `Profile request - user from JWT: ${JSON.stringify(req.user)}`,
+    )
+
+    return this.authService.getUsers(req.user.id)
+  }
 }

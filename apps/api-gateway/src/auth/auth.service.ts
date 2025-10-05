@@ -121,6 +121,25 @@ export class AuthService implements OnModuleInit {
     }
   }
 
+  async getUsers(userId: string) {
+    this.logger.log(`Proxying users request for user: ${userId}`)
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.authServiceUrl}/users`, {
+          headers: {
+            'x-user-id': userId,
+          },
+        }),
+      )
+
+      this.logger.log(`Users retrieved successfully for user: ${userId}`)
+      return response.data
+    } catch (error) {
+      this.handleError(error, `Get users failed for user: ${userId}`, true)
+    }
+  }
+
   private handleError(
     error: unknown,
     message: string,

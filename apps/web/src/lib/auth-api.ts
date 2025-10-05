@@ -23,6 +23,11 @@ export const authApi = {
     return data
   },
 
+  getUsers: async (): Promise<User[]> => {
+    const { data } = await apiClient.get<User[]>('/auth/users')
+    return data
+  },
+
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
     const { data } = await apiClient.post<AuthResponse>('/auth/refresh', {
       refreshToken,
