@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { AxiosError } from 'axios'
 import { authApi } from '@/lib/auth-api'
 import { useAuthStore } from '@/stores/auth-store'
-import { LoginRequest, RegisterRequest } from '@/types/api'
-import { AxiosError } from 'axios'
+import { LoginRequest, RegisterRequest, ApiErrorResponse } from '@/types/api'
 
 export function useAuth() {
   const navigate = useNavigate()
@@ -50,8 +50,9 @@ export function useAuth() {
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,
-    loginError: loginMutation.error as AxiosError,
-    registerError: registerMutation.error as AxiosError,
+    loginError: loginMutation.error as AxiosError<ApiErrorResponse> | null,
+    registerError:
+      registerMutation.error as AxiosError<ApiErrorResponse> | null,
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
   }

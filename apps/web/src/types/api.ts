@@ -23,8 +23,8 @@ export interface AuthResponse {
   refreshToken: string
 }
 
-export interface ApiError {
-  message: string
+export interface ApiErrorResponse {
+  message: string | string[]
   statusCode: number
   error?: string
 }

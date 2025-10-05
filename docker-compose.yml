@@ -65,6 +65,8 @@ services:
     volumes:
       - ./apps/auth-service:/app/apps/auth-service
       - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/auth-service/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -101,6 +103,8 @@ services:
     volumes:
       - ./apps/tasks-service:/app/apps/tasks-service
       - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/tasks-service/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,6 +143,8 @@ services:
     volumes:
       - ./apps/notifications-service:/app/apps/notifications-service
       - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/notifications-service/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -170,10 +176,13 @@ services:
       TASKS_SERVICE_URL: http://tasks-service:3003
       NOTIFICATIONS_SERVICE_URL: http://notifications-service:3004
       JWT_SECRET: jwt_secret
+      CORS_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
       LOG_LEVEL: info
     volumes:
       - ./apps/api-gateway:/app/apps/api-gateway
       - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/api-gateway/node_modules
     depends_on:
       auth-service:
         condition: service_healthy
@@ -181,6 +190,12 @@ services:
         condition: service_healthy
       notifications-service:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     networks:
       - collaborative-task-management-network
 
@@ -191,7 +206,6 @@ services:
       target: development
     container_name: collaborative-task-management-web
     restart: unless-stopped
-    command: pnpm dev
     ports:
       - "3000:3000"
     environment:
@@ -199,6 +213,7 @@ services:
       VITE_WS_URL: ws://localhost:3001
     volumes:
       - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
       - /app/node_modules
       - /app/apps/web/node_modules
     depends_on:
