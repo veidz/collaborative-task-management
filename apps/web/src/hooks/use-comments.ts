@@ -2,11 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { taskApi } from '@/lib/task-api'
 import { CreateCommentRequest } from '@/types/task'
 
-export function useComments(taskId: string) {
+export function useComments(taskId: string, page = 1, limit = 50) {
   return useQuery({
-    queryKey: ['tasks', taskId, 'comments'],
-    queryFn: () => taskApi.getComments(taskId),
+    queryKey: ['tasks', taskId, 'comments', page, limit],
+    queryFn: () => taskApi.getComments(taskId, page, limit),
     enabled: !!taskId,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    select: (data) => data.data,
   })
 }
 

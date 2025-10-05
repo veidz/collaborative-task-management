@@ -94,3 +94,11 @@ export interface PaginatedResponse<T> {
     totalPages: number
   }
 }
+
+export interface PaginatedCommentsResponse {
+  data: Comment[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}

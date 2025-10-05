@@ -7,6 +7,7 @@ import {
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
 import { TasksListPage } from '@/pages/tasks-list'
+import { TaskDetailPage } from '@/pages/task-detail'
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -60,9 +61,22 @@ const tasksRoute = createRoute({
   component: TasksListPage,
 })
 
+const taskDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks/$id',
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      throw redirect({ to: '/login' })
+    }
+  },
+  component: TaskDetailPage,
+})
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
   tasksRoute,
+  taskDetailRoute,
 ])

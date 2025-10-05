@@ -4,11 +4,10 @@ import {
   Comment,
   CreateTaskRequest,
   UpdateTaskRequest,
-  AssignUsersRequest,
-  UnassignUsersRequest,
   CreateCommentRequest,
   TaskFilters,
   PaginatedResponse,
+  PaginatedCommentsResponse,
 } from '@/types/task'
 
 export const taskApi = {
@@ -44,7 +43,7 @@ export const taskApi = {
     id: string,
     taskData: UpdateTaskRequest,
   ): Promise<Task> => {
-    const { data } = await apiClient.patch<Task>(`/tasks/${id}`, taskData)
+    const { data } = await apiClient.put<Task>(`/tasks/${id}`, taskData)
     return data
   },
 
@@ -52,30 +51,14 @@ export const taskApi = {
     await apiClient.delete(`/tasks/${id}`)
   },
 
-  assignUsers: async (
-    id: string,
-    assignData: AssignUsersRequest,
-  ): Promise<Task> => {
-    const { data } = await apiClient.put<Task>(
-      `/tasks/${id}/assign`,
-      assignData,
+  getComments: async (
+    taskId: string,
+    page = 1,
+    limit = 50,
+  ): Promise<PaginatedCommentsResponse> => {
+    const { data } = await apiClient.get<PaginatedCommentsResponse>(
+      `/tasks/${taskId}/comments?page=${page}&limit=${limit}`,
     )
-    return data
-  },
-
-  unassignUsers: async (
-    id: string,
-    unassignData: UnassignUsersRequest,
-  ): Promise<Task> => {
-    const { data } = await apiClient.put<Task>(
-      `/tasks/${id}/unassign`,
-      unassignData,
-    )
-    return data
-  },
-
-  getComments: async (taskId: string): Promise<Comment[]> => {
-    const { data } = await apiClient.get<Comment[]>(`/tasks/${taskId}/comments`)
     return data
   },
 

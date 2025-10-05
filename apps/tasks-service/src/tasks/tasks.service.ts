@@ -245,12 +245,11 @@ export class TasksService {
       }
     }
 
-    // Handle assignee updates
     if (updateTaskDto.assigneeIds !== undefined) {
       const currentAssigneeIds = task.assignments?.map((a) => a.userId) || []
-      const newAssigneeIds = updateTaskDto.assigneeIds
 
-      // Validate new user IDs
+      const newAssigneeIds = [...new Set(updateTaskDto.assigneeIds)]
+
       if (newAssigneeIds.length > 0) {
         const validUsers =
           await this.authServiceClient.validateUsers(newAssigneeIds)
@@ -262,26 +261,30 @@ export class TasksService {
         }
       }
 
-      // Only update if there are actual changes
+      const sortedCurrent = [...currentAssigneeIds].sort()
+      const sortedNew = [...newAssigneeIds].sort()
       const assigneesChanged =
-        currentAssigneeIds.length !== newAssigneeIds.length ||
-        !currentAssigneeIds.every((id) => newAssigneeIds.includes(id))
+        sortedCurrent.length !== sortedNew.length ||
+        sortedCurrent.some((id, index) => id !== sortedNew[index])
 
       if (assigneesChanged) {
-        // Delete all current assignments
-        await this.assignmentsRepository.delete({ taskId: id })
+        await this.tasksRepository.manager.transaction(async (manager) => {
+          await manager.delete('task_assignments', { taskId: id })
 
-        // Add new assignments
-        if (newAssigneeIds.length > 0) {
-          const assignments = newAssigneeIds.map((assigneeId) => {
-            const assignment = new TaskAssignment()
-            assignment.taskId = id
-            assignment.userId = assigneeId
-            assignment.assignedBy = userId
-            return assignment
-          })
-          await this.assignmentsRepository.save(assignments)
-        }
+          if (newAssigneeIds.length > 0) {
+            const assignments = newAssigneeIds.map((assigneeId) => ({
+              taskId: id,
+              userId: assigneeId,
+              assignedBy: userId,
+            }))
+            await manager
+              .createQueryBuilder()
+              .insert()
+              .into('task_assignments')
+              .values(assignments)
+              .execute()
+          }
+        })
 
         assigneeIds = newAssigneeIds
         changes.push('assignees')
