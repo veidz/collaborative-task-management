@@ -119,7 +119,6 @@ export class AuthController {
     @Headers('x-user-id') userId: string,
     @Req() req: Request,
   ): Promise<ProfileResponseDto> {
-    // Debug: Log all headers
     this.logger.log(`All headers received: ${JSON.stringify(req.headers)}`)
     this.logger.log(`x-user-id header value: ${userId}`)
 

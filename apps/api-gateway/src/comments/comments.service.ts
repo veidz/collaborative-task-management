@@ -81,6 +81,8 @@ export class CommentsService implements OnModuleInit {
       )
 
       this.logger.log(`Comments retrieved successfully for task ${taskId}`)
+      this.logger.log(response.data)
+
       return response.data
     } catch (error) {
       this.handleError(error, `Get comments for task ${taskId} failed`)

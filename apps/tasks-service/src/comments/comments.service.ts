@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Comment } from './entities/comment.entity'
@@ -8,6 +13,7 @@ import { GetCommentsQueryDto } from './dto/get-comments-query.dto'
 import { CommentResponseDto } from './dto/comment-response.dto'
 import { PaginatedCommentsResponseDto } from './dto/paginated-comments-response.dto'
 import { EventsPublisherService } from '../events/events-publisher.service'
+import { AuthServiceClient } from 'src/common/clients/auth-service.client'
 
 @Injectable()
 export class CommentsService {
@@ -19,6 +25,7 @@ export class CommentsService {
     @InjectRepository(Task)
     private readonly tasksRepository: Repository<Task>,
     private readonly eventsPublisher: EventsPublisherService,
+    private readonly authServiceClient: AuthServiceClient,
   ) {}
 
   async create(
@@ -30,11 +37,25 @@ export class CommentsService {
 
     const task = await this.tasksRepository.findOne({
       where: { id: taskId },
+      relations: ['assignments'],
     })
 
     if (!task) {
       this.logger.warn(`Task ${taskId} not found`)
       throw new NotFoundException('Task not found')
+    }
+
+    // Check authorization
+    const isCreator = task.createdBy === userId
+    const isAssignee = task.assignments?.some((a) => a.userId === userId)
+
+    if (!isCreator && !isAssignee) {
+      this.logger.warn(
+        `User ${userId} not authorized to comment on task ${taskId}`,
+      )
+      throw new ForbiddenException(
+        'You are not authorized to comment on this task',
+      )
     }
 
     const comment = new Comment()
@@ -54,7 +75,13 @@ export class CommentsService {
       createdAt: savedComment.createdAt,
     })
 
-    return this.mapToResponseDto(savedComment)
+    // Fetch author info
+    const author = await this.authServiceClient.getUserById(userId)
+
+    return {
+      ...this.mapToResponseDto(savedComment),
+      author: author || undefined,
+    }
   }
 
   async findAll(
@@ -65,11 +92,23 @@ export class CommentsService {
     this.logger.log(`Fetching comments for task ${taskId}`)
 
     const task = await this.tasksRepository.findOne({
-      where: { id: taskId, createdBy: userId },
+      where: { id: taskId },
+      relations: ['assignments'],
     })
 
     if (!task) {
-      this.logger.warn(`Task ${taskId} not found for user: ${userId}`)
+      this.logger.warn(`Task ${taskId} not found`)
+      throw new NotFoundException('Task not found')
+    }
+
+    // Check authorization
+    const isCreator = task.createdBy === userId
+    const isAssignee = task.assignments?.some((a) => a.userId === userId)
+
+    if (!isCreator && !isAssignee) {
+      this.logger.warn(
+        `User ${userId} not authorized to view comments on task ${taskId}`,
+      )
       throw new NotFoundException('Task not found')
     }
 
@@ -78,17 +117,27 @@ export class CommentsService {
 
     const [comments, total] = await this.commentsRepository.findAndCount({
       where: { taskId },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: 'ASC' },
       skip,
       take: limit,
     })
+
+    // Fetch all unique author IDs
+    const authorIds = [...new Set(comments.map((c) => c.authorId))]
+    const authors = await this.authServiceClient.getUsersByIds(authorIds)
+
+    // Map comments with author data
+    const commentsWithAuthors = comments.map((comment) => ({
+      ...this.mapToResponseDto(comment),
+      author: authors.get(comment.authorId) || undefined,
+    }))
 
     const totalPages = Math.ceil(total / limit)
 
     this.logger.log(`Found ${total} comments for task ${taskId}`)
 
     return {
-      data: comments.map((comment) => this.mapToResponseDto(comment)),
+      data: commentsWithAuthors,
       total,
       page,
       limit,

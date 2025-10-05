@@ -19,7 +19,7 @@ export class AuthServiceClient {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    let url = this.configService.get<string>('AUTH_SERVICE_URL')
+    const url = this.configService.get<string>('AUTH_SERVICE_URL')
 
     if (!url) {
       throw new Error(
@@ -52,5 +52,43 @@ export class AuthServiceClient {
       }
       return new Map()
     }
+  }
+
+  async getUserById(userId: string): Promise<UserDto | null> {
+    this.logger.log(`Fetching user ${userId}`)
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<UserDto>(`${this.authServiceUrl}/users/${userId}`),
+      )
+
+      return response.data
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        this.logger.warn(`User ${userId} not found: ${error.message}`)
+      }
+      return null
+    }
+  }
+
+  async getUsersByIds(userIds: string[]): Promise<Map<string, UserDto>> {
+    if (userIds.length === 0) return new Map()
+
+    this.logger.log(`Fetching ${userIds.length} users`)
+
+    const uniqueIds = [...new Set(userIds)]
+    const userMap = new Map<string, UserDto>()
+
+    await Promise.all(
+      uniqueIds.map(async (id) => {
+        const user = await this.getUserById(id)
+        if (user) {
+          userMap.set(user.id, user)
+        }
+      }),
+    )
+
+    this.logger.log(`Fetched ${userMap.size} users`)
+    return userMap
   }
 }
