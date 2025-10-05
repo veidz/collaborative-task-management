@@ -27,7 +27,9 @@
     "lucide-react": "^0.468.0",
     "date-fns": "^4.1.0",
     "zustand": "^5.0.2",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "@radix-ui/react-select": "^2.1.4",
+    "@radix-ui/react-dialog": "^1.1.4"
   },
   "devDependencies": {
     "@types/react": "^19.0.6",
