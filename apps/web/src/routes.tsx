@@ -1,9 +1,5 @@
-import {
-  createRootRoute,
-  createRoute,
-  Outlet,
-  redirect,
-} from '@tanstack/react-router'
+import { createRootRoute, createRoute, redirect } from '@tanstack/react-router'
+import { App } from '@/App'
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
 import { TasksListPage } from '@/pages/tasks-list'
@@ -11,7 +7,7 @@ import { TaskDetailPage } from '@/pages/task-detail'
 import { WebSocketTestPage } from '@/pages/websocket-test'
 
 const rootRoute = createRootRoute({
-  component: () => <Outlet />,
+  component: App,
 })
 
 const indexRoute = createRoute({
