@@ -45,7 +45,6 @@ export class CommentsService {
       throw new NotFoundException('Task not found')
     }
 
-    // Check authorization
     const isCreator = task.createdBy === userId
     const isAssignee = task.assignments?.some((a) => a.userId === userId)
 
@@ -75,7 +74,6 @@ export class CommentsService {
       createdAt: savedComment.createdAt,
     })
 
-    // Fetch author info
     const author = await this.authServiceClient.getUserById(userId)
 
     return {
@@ -101,7 +99,6 @@ export class CommentsService {
       throw new NotFoundException('Task not found')
     }
 
-    // Check authorization
     const isCreator = task.createdBy === userId
     const isAssignee = task.assignments?.some((a) => a.userId === userId)
 
@@ -122,11 +119,9 @@ export class CommentsService {
       take: limit,
     })
 
-    // Fetch all unique author IDs
     const authorIds = [...new Set(comments.map((c) => c.authorId))]
     const authors = await this.authServiceClient.getUsersByIds(authorIds)
 
-    // Map comments with author data
     const commentsWithAuthors = comments.map((comment) => ({
       ...this.mapToResponseDto(comment),
       author: authors.get(comment.authorId) || undefined,
@@ -150,7 +145,6 @@ export class CommentsService {
       id: comment.id,
       content: comment.content,
       taskId: comment.taskId,
-      authorId: comment.authorId,
       createdAt: comment.createdAt,
       updatedAt: comment.updatedAt,
     }

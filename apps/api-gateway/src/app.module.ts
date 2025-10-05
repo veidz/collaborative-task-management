@@ -7,6 +7,7 @@ import { TasksModule } from './tasks/tasks.module'
 import servicesConfig from './config/services.config'
 import { NotificationsModule } from './notifications/notifications.module'
 import { CommentsModule } from './comments/comments.module'
+import { WebSocketModule } from './websocket/websocket.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CommentsModule } from './comments/comments.module'
     TasksModule,
     CommentsModule,
     NotificationsModule,
+    WebSocketModule,
   ],
 })
 export class AppModule {}

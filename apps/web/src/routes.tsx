@@ -8,6 +8,7 @@ import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
 import { TasksListPage } from '@/pages/tasks-list'
 import { TaskDetailPage } from '@/pages/task-detail'
+import { WebSocketTestPage } from '@/pages/websocket-test'
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -73,10 +74,23 @@ const taskDetailRoute = createRoute({
   component: TaskDetailPage,
 })
 
+const websocketTestRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/websocket-test',
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      throw redirect({ to: '/login' })
+    }
+  },
+  component: WebSocketTestPage,
+})
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
   tasksRoute,
   taskDetailRoute,
+  websocketTestRoute,
 ])
