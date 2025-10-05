@@ -1,9 +1,10 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { Link } from '@tanstack/react-router'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
-import { loginSchema, LoginFormData } from '@/lib/validations/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,10 +16,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginPage() {
-  const { login, isLoggingIn, loginError } = useAuth()
+  const { login, isLoggingIn, loginError, isAuthenticated } = useAuth()
 
   const {
     register,
@@ -32,21 +40,20 @@ export function LoginPage() {
     login(data)
   }
 
-  const getErrorMessage = () => {
-    if (!loginError) return null
-    const message = loginError.response?.data?.message
-    if (Array.isArray(message)) {
-      return message.join(', ')
+  useEffect(() => {
+    if (isAuthenticated) {
+      window.location.href = '/tasks'
     }
-    return message || 'Invalid email or password'
-  }
+  }, [isAuthenticated])
 
   return (
-    <div className='flex min-h-screen items-center justify-center bg-background p-4'>
+    <div className='flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8'>
       <Card className='w-full max-w-md'>
         <CardHeader className='space-y-1'>
-          <CardTitle className='text-3xl font-bold'>Welcome back</CardTitle>
-          <CardDescription>
+          <CardTitle className='text-2xl font-bold text-center'>
+            Sign in
+          </CardTitle>
+          <CardDescription className='text-center'>
             Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
@@ -55,8 +62,9 @@ export function LoginPage() {
             {loginError && (
               <Alert variant='destructive'>
                 <AlertCircle className='h-4 w-4' />
-                <AlertTitle>Login failed</AlertTitle>
-                <AlertDescription>{getErrorMessage()}</AlertDescription>
+                <AlertDescription>
+                  {loginError.response?.data?.message || 'Invalid credentials'}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -65,7 +73,7 @@ export function LoginPage() {
               <Input
                 id='email'
                 type='email'
-                placeholder='john@example.com'
+                placeholder='name@example.com'
                 {...register('email')}
                 disabled={isLoggingIn}
               />
@@ -81,7 +89,7 @@ export function LoginPage() {
               <Input
                 id='password'
                 type='password'
-                placeholder='••••••••'
+                placeholder='Enter your password'
                 {...register('password')}
                 disabled={isLoggingIn}
               />
@@ -98,16 +106,13 @@ export function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className='flex justify-center'>
-          <p className='text-sm text-muted-foreground'>
-            Don't have an account?{' '}
-            <Link
-              to='/register'
-              className='font-medium text-primary hover:underline'
-            >
+        <CardFooter className='flex flex-col space-y-4'>
+          <div className='text-sm text-muted-foreground text-center'>
+            Don&apos;t have an account?{' '}
+            <Link to='/register' className='text-primary hover:underline'>
               Sign up
             </Link>
-          </p>
+          </div>
         </CardFooter>
       </Card>
     </div>
