@@ -1,38 +1,21 @@
 import { Controller, Get } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
-import { InjectDataSource } from '@nestjs/typeorm'
-import { DataSource } from 'typeorm'
+import { HealthService } from './health.service'
+import { HealthResponseDto } from './dto/health-response.dto'
 
 @ApiTags('Health')
 @Controller('health')
 export class HealthController {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(private readonly healthService: HealthService) {}
 
   @Get()
   @ApiOperation({ summary: 'Health check endpoint' })
   @ApiResponse({
     status: 200,
     description: 'Service is healthy',
-    schema: {
-      type: 'object',
-      properties: {
-        status: { type: 'string', example: 'ok' },
-        timestamp: { type: 'string', example: '2025-10-02T00:28:03.000Z' },
-        service: { type: 'string', example: 'auth-service' },
-        database: { type: 'string', example: 'connected' },
-      },
-    },
+    type: HealthResponseDto,
   })
-  async check() {
-    const dbStatus = this.dataSource.isInitialized
-      ? 'connected'
-      : 'disconnected'
-
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      service: 'auth-service',
-      database: dbStatus,
-    }
+  getHealth(): HealthResponseDto {
+    return this.healthService.getHealth()
   }
 }

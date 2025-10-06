@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoggerModule } from './common/logger'
 import { typeOrmConfig } from './config/typeorm.config'
-import { HealthController } from './health/health.controller'
+import { HealthModule } from './health/health.module'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 
@@ -15,9 +15,9 @@ import { UsersModule } from './users/users.module'
     }),
     LoggerModule,
     TypeOrmModule.forRoot(typeOrmConfig),
+    HealthModule,
     AuthModule,
     UsersModule,
   ],
-  controllers: [HealthController],
 })
 export class AppModule {}
