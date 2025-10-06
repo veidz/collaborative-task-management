@@ -14,6 +14,10 @@ const statusConfig = {
     label: 'In Progress',
     variant: 'info' as const,
   },
+  [TaskStatus.REVIEW]: {
+    label: 'Review',
+    variant: 'warning' as const,
+  },
   [TaskStatus.DONE]: {
     label: 'Done',
     variant: 'success' as const,

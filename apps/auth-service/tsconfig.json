@@ -21,5 +21,5 @@
     "../api-gateway/src/common/types",
     "../api-gateway/src/types"
   ],
-  "exclude": ["node_modules", "dist", "../../packages/*/src/**/*"]
+  "exclude": ["node_modules", "dist"]
 }

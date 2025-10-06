@@ -1,9 +1,7 @@
-import type {
-  PaginatedResponse,
-  TaskStatus,
-  TaskPriority,
-} from '@packages/types'
-export type { TaskStatus, TaskPriority, PaginatedResponse }
+import type { PaginatedResponse } from '@packages/types'
+import { TaskStatus, TaskPriority } from '@packages/types'
+export type { PaginatedResponse }
+export { TaskStatus, TaskPriority }
 
 export interface Task {
   id: string

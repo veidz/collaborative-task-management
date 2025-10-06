@@ -9,13 +9,13 @@ import {
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
 import { JwtService } from '@nestjs/jwt'
+import { JwtPayload } from '@packages/types'
 import { ConnectionManagerService } from './connection-manager.service'
 import {
   ServerToClientEvents,
   ClientToServerEvents,
   NotificationPayload,
 } from './interfaces/websocket-events.interface'
-import { JwtPayload } from '../common/strategies/jwt.strategy'
 
 @WebSocketGateway({
   cors: {

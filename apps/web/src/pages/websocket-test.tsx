@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useWebSocket } from '@/hooks/use-websocket'
-import { NotificationPayload } from '@/lib/websocket'
 import { apiClient } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Wifi, WifiOff, Bell, Trash2, AlertCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { NotificationPayload } from '@packages/types'
 
 export function WebSocketTestPage() {
   const { isConnected, onNotification } = useWebSocket()

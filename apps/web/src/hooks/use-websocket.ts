@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Socket } from 'socket.io-client'
-import { websocketService, NotificationPayload } from '@/lib/websocket'
+import { websocketService } from '@/lib/websocket'
 import { useAuthStore } from '@/stores/auth-store'
+import { NotificationPayload } from '@packages/types'
 
 interface ServerToClientEvents {
   connected: (data: { message: string; userId: string }) => void

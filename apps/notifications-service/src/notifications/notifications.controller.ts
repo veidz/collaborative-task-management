@@ -21,10 +21,7 @@ import { NotificationResponseDto } from './dto/notification-response.dto'
 import { PaginatedNotificationsResponseDto } from './dto/paginated-notifications-response.dto'
 import { UnreadCountResponseDto } from './dto/unread-count-response.dto'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
-import {
-  CurrentUser,
-  CurrentUserData,
-} from '../common/decorators/current-user.decorator'
+import { CurrentUser, CurrentUserData } from '../common/decorators'
 
 @ApiTags('Notifications')
 @Controller('notifications')
