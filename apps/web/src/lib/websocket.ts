@@ -1,23 +1,8 @@
 import { io, Socket } from 'socket.io-client'
-
-export interface NotificationPayload {
-  id: string
-  userId: string
-  type: 'TASK_CREATED' | 'TASK_UPDATED' | 'TASK_DELETED' | 'COMMENT_CREATED'
-  message: string
-  read: boolean
-  createdAt: Date
-}
-
-interface ServerToClientEvents {
-  connected: (data: { message: string; userId: string }) => void
-  notification: (notification: NotificationPayload) => void
-  error: (error: { message: string }) => void
-}
-
-interface ClientToServerEvents {
-  ping: () => void
-}
+import type {
+  ServerToClientEvents,
+  ClientToServerEvents,
+} from '@packages/types'
 
 export class WebSocketService {
   private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null =

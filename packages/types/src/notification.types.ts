@@ -13,27 +13,3 @@ export interface NotificationResponse {
   read: boolean
   createdAt: Date
 }
-
-export interface TaskCreatedEvent {
-  taskId: string
-  title: string
-  assignees: string[]
-  createdBy: string
-}
-
-export interface TaskUpdatedEvent {
-  taskId: string
-  title: string
-  changes: Record<string, unknown>
-  assignees: string[]
-  updatedBy: string
-}
-
-export interface CommentCreatedEvent {
-  commentId: string
-  taskId: string
-  taskTitle: string
-  content: string
-  authorId: string
-  taskAssignees: string[]
-}

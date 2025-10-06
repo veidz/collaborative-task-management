@@ -1,16 +1,9 @@
-export enum TaskStatus {
-  TODO = 'TODO',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DONE = 'DONE',
-  CANCELLED = 'CANCELLED',
-}
-
-export enum TaskPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
-}
+import type {
+  PaginatedResponse,
+  TaskStatus,
+  TaskPriority,
+} from '@packages/types'
+export type { TaskStatus, TaskPriority, PaginatedResponse }
 
 export interface Task {
   id: string
@@ -83,16 +76,6 @@ export interface TaskFilters {
   assignedTo?: string
   page?: number
   limit?: number
-}
-
-export interface PaginatedResponse<T> {
-  data: T[]
-  meta: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
 }
 
 export interface PaginatedCommentsResponse {

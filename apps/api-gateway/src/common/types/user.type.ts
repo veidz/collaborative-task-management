@@ -1,5 +1,1 @@
-export interface UserPayload {
-  id: string
-  email: string
-  username: string
-}
+export { UserPayload } from '@packages/types'

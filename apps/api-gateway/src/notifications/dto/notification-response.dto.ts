@@ -1,11 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-
-export enum NotificationType {
-  TASK_CREATED = 'TASK_CREATED',
-  TASK_UPDATED = 'TASK_UPDATED',
-  TASK_DELETED = 'TASK_DELETED',
-  COMMENT_CREATED = 'COMMENT_CREATED',
-}
+import { NotificationType } from '@packages/types'
 
 export class NotificationResponseDto {
   @ApiProperty({
