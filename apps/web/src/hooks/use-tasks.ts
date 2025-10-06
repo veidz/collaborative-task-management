@@ -6,6 +6,7 @@ import {
   AssignUsersRequest,
   UnassignUsersRequest,
   TaskFilters,
+  CreateCommentRequest,
 } from '@/types/task'
 
 export function useTasks(filters?: TaskFilters) {
@@ -78,6 +79,27 @@ export function useUnassignUsers(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       queryClient.invalidateQueries({ queryKey: ['tasks', id] })
+    },
+  })
+}
+
+export function useTaskComments(taskId: string, page = 1, limit = 50) {
+  return useQuery({
+    queryKey: ['tasks', taskId, 'comments', page, limit],
+    queryFn: () => taskApi.getComments(taskId, page, limit),
+    enabled: !!taskId,
+  })
+}
+
+export function useCreateComment(taskId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreateCommentRequest) =>
+      taskApi.createComment(taskId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', taskId, 'comments'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks', taskId] })
     },
   })
 }

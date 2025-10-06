@@ -29,7 +29,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
   private channel: Channel | null = null
   private readonly queueName = 'tasks_queue'
   private readonly maxRetries = 10
-  private readonly retryDelay = 3000 // 3 seconds
+  private readonly retryDelay = 3000
 
   constructor(
     private readonly configService: ConfigService,

@@ -47,7 +47,6 @@ export function TaskDetailPage() {
     })
   }
 
-  // Comments are already extracted as array by the select function in useComments hook
   const commentsList = Array.isArray(comments) ? comments : []
 
   if (isLoading) {

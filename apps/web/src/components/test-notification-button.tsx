@@ -9,7 +9,6 @@ export function TestNotificationButton() {
   const triggerTestNotification = async () => {
     try {
       setLoading(true)
-      // Create a test task which will trigger a notification
       await apiClient.post('/tasks', {
         title: `Test notification ${new Date().toISOString()}`,
         description: 'This is a test to trigger a notification',

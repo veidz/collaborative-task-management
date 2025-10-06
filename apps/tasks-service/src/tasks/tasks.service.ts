@@ -59,7 +59,7 @@ export class TasksService {
         savedTask.id,
         createTaskDto.assigneeIds,
         userId,
-        false, // Don't check for existing since this is a new task
+        false,
       )
       assigneeIds.push(...createTaskDto.assigneeIds)
     }
@@ -479,7 +479,6 @@ export class TasksService {
 
     let newUserIds = userIds
 
-    // Only check for existing assignments if requested
     if (checkExisting) {
       const existingAssignments = await this.assignmentsRepository.find({
         where: { taskId },

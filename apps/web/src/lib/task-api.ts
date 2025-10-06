@@ -8,6 +8,8 @@ import {
   TaskFilters,
   PaginatedResponse,
   PaginatedCommentsResponse,
+  AssignUsersRequest,
+  UnassignUsersRequest,
 } from '@/types/task'
 
 export const taskApi = {
@@ -69,6 +71,28 @@ export const taskApi = {
     const { data } = await apiClient.post<Comment>(
       `/tasks/${taskId}/comments`,
       commentData,
+    )
+    return data
+  },
+
+  assignUsers: async (
+    id: string,
+    assignData: AssignUsersRequest,
+  ): Promise<Task> => {
+    const { data } = await apiClient.post<Task>(
+      `/tasks/${id}/assign`,
+      assignData,
+    )
+    return data
+  },
+
+  unassignUsers: async (
+    id: string,
+    unassignData: UnassignUsersRequest,
+  ): Promise<Task> => {
+    const { data } = await apiClient.post<Task>(
+      `/tasks/${id}/unassign`,
+      unassignData,
     )
     return data
   },

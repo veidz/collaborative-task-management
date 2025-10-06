@@ -11,5 +11,5 @@ export interface Notification {
   type: NotificationType
   message: string
   read: boolean
-  createdAt: Date
+  createdAt: Date | string
 }

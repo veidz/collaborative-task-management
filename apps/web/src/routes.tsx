@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, redirect } from '@tanstack/react-router'
 import { App } from '@/App'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import { LoginPage } from '@/pages/login'
 import { RegisterPage } from '@/pages/register'
 import { TasksListPage } from '@/pages/tasks-list'
@@ -46,39 +47,33 @@ const registerRoute = createRoute({
   component: RegisterPage,
 })
 
-const tasksRoute = createRoute({
+const authenticatedRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/tasks',
+  id: 'authenticated',
   beforeLoad: () => {
     const token = localStorage.getItem('accessToken')
     if (!token) {
       throw redirect({ to: '/login' })
     }
   },
+  component: AuthenticatedLayout,
+})
+
+const tasksRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/tasks',
   component: TasksListPage,
 })
 
 const taskDetailRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedRoute,
   path: '/tasks/$id',
-  beforeLoad: () => {
-    const token = localStorage.getItem('accessToken')
-    if (!token) {
-      throw redirect({ to: '/login' })
-    }
-  },
   component: TaskDetailPage,
 })
 
 const websocketTestRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedRoute,
   path: '/websocket-test',
-  beforeLoad: () => {
-    const token = localStorage.getItem('accessToken')
-    if (!token) {
-      throw redirect({ to: '/login' })
-    }
-  },
   component: WebSocketTestPage,
 })
 
@@ -86,7 +81,9 @@ export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
-  tasksRoute,
-  taskDetailRoute,
-  websocketTestRoute,
+  authenticatedRoute.addChildren([
+    tasksRoute,
+    taskDetailRoute,
+    websocketTestRoute,
+  ]),
 ])

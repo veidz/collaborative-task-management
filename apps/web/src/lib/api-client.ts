@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
-import { AuthResponse, ApiError } from '@/types/api'
+import { AuthResponse, ApiErrorResponse } from '@/types/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
@@ -23,7 +23,7 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<ApiError>) => {
+  async (error: AxiosError<ApiErrorResponse>) => {
     const originalRequest = error.config
 
     if (
