@@ -17,7 +17,6 @@ export class CreateUserTable1759430887488 implements MigrationInterface {
       )
     `)
 
-    // Create indexes only if they don't exist
     await queryRunner.query(`
       CREATE INDEX IF NOT EXISTS "IDX_USERS_EMAIL" ON "users" ("email")
     `)
