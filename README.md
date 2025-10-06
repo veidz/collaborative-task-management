@@ -333,12 +333,23 @@ Uma plataforma de gerenciamento de tarefas baseada em microsserviços com comuni
 
 ### Pré-requisitos
 
-**Apenas Docker é necessário:**
+- **Node.js** 20+ e **pnpm** (para build local dos pacotes compartilhados)
+- **Docker Desktop** (ou Docker Engine + Docker Compose)
+- **Git**
 
-- Docker Desktop (ou Docker Engine + Docker Compose)
-- Git
+### Instalação do pnpm
 
-> **Importante:** Não é necessário instalar Node.js, pnpm, PostgreSQL ou RabbitMQ localmente. Tudo roda dentro de containers!
+```bash
+# Via npm
+npm install -g pnpm
+
+# Via Homebrew (macOS)
+brew install pnpm
+
+# Via Corepack (recomendado - já vem com Node.js 16+)
+corepack enable
+corepack prepare pnpm@latest --activate
+```
 
 ### Passo a Passo
 
@@ -349,7 +360,20 @@ git clone git@github.com:veidz/collaborative-task-management.git
 cd collaborative-task-management
 ```
 
-#### 2. Inicie Todos os Serviços
+#### 2. Instale Dependências e Build dos Pacotes
+
+```bash
+# Instala todas as dependências do monorepo
+pnpm install
+
+# Faz build dos pacotes compartilhados (@packages/types e @packages/utils)
+pnpm --filter @packages/types build
+pnpm --filter @packages/utils build
+```
+
+> **Por que fazer build antes?** Os serviços NestJS importam os pacotes compartilhados (`@packages/types` e `@packages/utils`). O build local garante que os arquivos `.d.ts` e `.js` estejam disponíveis antes de iniciar os containers.
+
+#### 3. Inicie Todos os Serviços com Docker
 
 ```bash
 docker-compose up
@@ -364,17 +388,17 @@ docker-compose up
    - `notifications_service`
 3. ✅ RabbitMQ inicia o message broker
 4. ✅ Cada serviço backend:
-   - Instala dependências (pnpm install)
+   - Usa as dependências já instaladas (via volume mount)
    - Executa migrations do banco de dados
    - Inicia em modo desenvolvimento com hot-reload
 5. ✅ API Gateway aguarda todos os serviços estarem saudáveis (health checks)
 6. ✅ Frontend compila e inicia com Vite
 
-**Primeira execução:** Pode levar 5-10 minutos (build das imagens + instalação de dependências)
+**Primeira execução:** Pode levar 5-10 minutos (build das imagens Docker)
 
 **Execuções seguintes:** ~1 minuto (usa cache)
 
-#### 3. Acesse a Aplicação
+#### 4. Acesse a Aplicação
 
 Aguarde até ver as mensagens de sucesso nos logs. Então acesse:
 
@@ -395,7 +419,14 @@ Aguarde até ver as mensagens de sucesso nos logs. Então acesse:
 ### Comandos Úteis
 
 ```bash
-# Iniciar em modo background (detached)
+# Rebuild dos pacotes após mudanças
+pnpm --filter @packages/types build
+pnpm --filter @packages/utils build
+
+# Limpar arquivos compilados localmente
+pnpm clean
+
+# Iniciar Docker em modo background (detached)
 docker-compose up -d
 
 # Ver logs de todos os serviços
@@ -411,7 +442,7 @@ docker-compose down
 # Parar e REMOVER volumes (limpa banco de dados)
 docker-compose down -v
 
-# Rebuild após mudanças no código ou dependências
+# Rebuild Docker após mudanças no código ou dependências
 docker-compose up --build
 
 # Rebuild de um serviço específico

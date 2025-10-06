@@ -12,9 +12,6 @@ COPY apps/tasks-service ./apps/tasks-service
 
 RUN pnpm install --frozen-lockfile
 
-RUN cd /app/packages/types && pnpm build
-RUN cd /app/packages/utils && pnpm build
-
 FROM base AS development
 
 RUN find . -name "*.tsbuildinfo" -type f -delete

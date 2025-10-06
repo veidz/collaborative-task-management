@@ -14,7 +14,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky",
-    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist **/*/tsconfig.tsbuildinfo"
+    "clean": "find ./apps ./packages -type f \\( -name '*.d.ts' -o -name '*.d.ts.map' -o -name '*.js' -o -name '*.js.map' \\) ! -path '*/node_modules/*' ! -path '*/web/*' ! -path '*/dist/*' ! -name 'express.d.ts' ! -name 'nestjs.js' ! -name 'react.js' -delete && rm -rf apps/*/dist packages/*/dist **/*/tsconfig.tsbuildinfo"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

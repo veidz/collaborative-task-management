@@ -82,8 +82,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 120s
     networks:
       - collaborative-task-management-network
 
@@ -117,8 +117,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 120s
     networks:
       - collaborative-task-management-network
 
@@ -150,8 +150,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 120s
     networks:
       - collaborative-task-management-network
 
@@ -185,8 +185,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 120s
     networks:
       - collaborative-task-management-network
 

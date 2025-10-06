@@ -1,5 +1,5 @@
 node_modules
-dist
+apps/**/dist
 build
 .next
 coverage
@@ -15,3 +15,4 @@ README.md
 
 !apps/**/.env
 !apps/**/migrations
+!packages/**/dist

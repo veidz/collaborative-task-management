@@ -4,7 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": false,
-    "assets": ["**/*.sql"],
+    "tsConfigPath": "tsconfig.json",
     "watchAssets": true
   }
 }

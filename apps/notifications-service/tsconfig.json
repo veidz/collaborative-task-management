@@ -2,7 +2,6 @@
   "extends": "@packages/tsconfig/nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": ".",
     "baseUrl": ".",
     "declaration": true,
     "declarationMap": true,
@@ -16,5 +15,10 @@
     }
   },
   "include": ["src/**/*", "migrations/**/*"],
-  "exclude": ["node_modules", "dist", "../../packages/*/src/**/*"]
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true,
+    "files": true
+  }
 }
