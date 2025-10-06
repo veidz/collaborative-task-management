@@ -66,18 +66,8 @@ services:
     command: pnpm dev
     ports:
       - "3002:3002"
-    environment:
-      NODE_ENV: development
-      PORT: 3002
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: auth_service
-      JWT_SECRET: jwt_secret_dev_only_change_in_production
-      JWT_ACCESS_EXPIRATION: 15m
-      JWT_REFRESH_EXPIRATION: 7d
-      LOG_LEVEL: info
+    env_file:
+      - ./apps/auth-service/.env
     volumes:
       - ./apps/auth-service:/app/apps/auth-service
       - ./packages:/app/packages
@@ -107,18 +97,8 @@ services:
     command: pnpm dev
     ports:
       - "3003:3003"
-    environment:
-      NODE_ENV: development
-      PORT: 3003
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: tasks_service
-      JWT_SECRET: jwt_secret_dev_only_change_in_production
-      AUTH_SERVICE_URL: http://auth-service:3002
-      RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
-      LOG_LEVEL: info
+    env_file:
+      - ./apps/tasks-service/.env
     volumes:
       - ./apps/tasks-service:/app/apps/tasks-service
       - ./packages:/app/packages
@@ -152,17 +132,8 @@ services:
     command: pnpm dev
     ports:
       - "3004:3004"
-    environment:
-      NODE_ENV: development
-      PORT: 3004
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: notifications_service
-      JWT_SECRET: jwt_secret_dev_only_change_in_production
-      RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
-      LOG_LEVEL: info
+    env_file:
+      - ./apps/notifications-service/.env
     volumes:
       - ./apps/notifications-service:/app/apps/notifications-service
       - ./packages:/app/packages
@@ -194,15 +165,8 @@ services:
     command: pnpm dev
     ports:
       - "3001:3001"
-    environment:
-      NODE_ENV: development
-      PORT: 3001
-      AUTH_SERVICE_URL: http://auth-service:3002
-      TASKS_SERVICE_URL: http://tasks-service:3003
-      NOTIFICATIONS_SERVICE_URL: http://notifications-service:3004
-      JWT_SECRET: jwt_secret_dev_only_change_in_production
-      CORS_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
-      LOG_LEVEL: info
+    env_file:
+      - ./apps/api-gateway/.env
     volumes:
       - ./apps/api-gateway:/app/apps/api-gateway
       - ./packages:/app/packages
@@ -236,9 +200,8 @@ services:
     command: pnpm dev
     ports:
       - "3000:3000"
-    environment:
-      VITE_API_URL: http://localhost:3001
-      VITE_WS_URL: ws://localhost:3001
+    env_file:
+      - ./apps/web/.env
     volumes:
       - ./apps/web:/app/apps/web
       - ./packages:/app/packages
