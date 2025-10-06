@@ -12,7 +12,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   return (
-    <Link to={`/tasks/${task.id}`} className='block'>
+    <Link to='/tasks/$id' params={{ id: task.id }} className='block'>
       <Card className='transition-colors hover:bg-accent'>
         <CardHeader>
           <div className='flex items-start justify-between gap-2'>

@@ -61,19 +61,19 @@ const authenticatedRoute = createRoute({
 
 const tasksRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/tasks',
+  path: 'tasks',
   component: TasksListPage,
 })
 
 const taskDetailRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/tasks/$id',
+  path: 'tasks/$id',
   component: TaskDetailPage,
 })
 
 const websocketTestRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
-  path: '/websocket-test',
+  path: 'websocket-test',
   component: WebSocketTestPage,
 })
 

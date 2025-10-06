@@ -25,7 +25,7 @@ import { DeleteTaskDialog } from '@/components/tasks/delete-task-dialog'
 import { CommentsSection } from '@/components/tasks/comments-section'
 
 export function TaskDetailPage() {
-  const { id } = useParams({ from: '/tasks/$id' })
+  const { id } = useParams({ from: '/authenticated/tasks/$id' })
   const navigate = useNavigate()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
