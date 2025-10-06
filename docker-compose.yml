@@ -1,4 +1,14 @@
 services:
+  setup:
+    image: alpine:3.19
+    container_name: collaborative-task-management-setup
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./apps:/apps
+    command: sh /scripts/setup.sh
+    networks:
+      - collaborative-task-management-network
+
   postgres:
     image: postgres:17.5-alpine
     container_name: collaborative-task-management-postgres
@@ -17,6 +27,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      setup:
+        condition: service_completed_successfully
     networks:
       - collaborative-task-management-network
 
@@ -37,6 +50,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      setup:
+        condition: service_completed_successfully
     networks:
       - collaborative-task-management-network
 
@@ -58,7 +74,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: auth_service
-      JWT_SECRET: jwt_secret
+      JWT_SECRET: jwt_secret_dev_only_change_in_production
       JWT_ACCESS_EXPIRATION: 15m
       JWT_REFRESH_EXPIRATION: 7d
       LOG_LEVEL: info
@@ -70,6 +86,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
       interval: 10s
@@ -97,7 +115,8 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: tasks_service
-      JWT_SECRET: jwt_secret
+      JWT_SECRET: jwt_secret_dev_only_change_in_production
+      AUTH_SERVICE_URL: http://auth-service:3002
       RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
       LOG_LEVEL: info
     volumes:
@@ -110,6 +129,10 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
       interval: 10s
@@ -137,7 +160,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: notifications_service
-      JWT_SECRET: jwt_secret
+      JWT_SECRET: jwt_secret_dev_only_change_in_production
       RABBITMQ_URL: amqp://rabbitmq:rabbitmq@rabbitmq:5672
       LOG_LEVEL: info
     volumes:
@@ -150,6 +173,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
       interval: 10s
@@ -175,7 +200,7 @@ services:
       AUTH_SERVICE_URL: http://auth-service:3002
       TASKS_SERVICE_URL: http://tasks-service:3003
       NOTIFICATIONS_SERVICE_URL: http://notifications-service:3004
-      JWT_SECRET: jwt_secret
+      JWT_SECRET: jwt_secret_dev_only_change_in_production
       CORS_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
       LOG_LEVEL: info
     volumes:
@@ -190,6 +215,8 @@ services:
         condition: service_healthy
       notifications-service:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 10s
@@ -206,6 +233,7 @@ services:
       target: development
     container_name: collaborative-task-management-web
     restart: unless-stopped
+    command: pnpm dev
     ports:
       - "3000:3000"
     environment:
@@ -219,6 +247,8 @@ services:
     depends_on:
       api-gateway:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
     networks:
       - collaborative-task-management-network
 
