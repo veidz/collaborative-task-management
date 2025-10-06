@@ -19,10 +19,12 @@ import {
   ApiHeader,
 } from '@nestjs/swagger'
 import { CommentsService } from './comments.service'
-import { CreateCommentDto } from './dto/create-comment.dto'
-import { GetCommentsQueryDto } from './dto/get-comments-query.dto'
-import { CommentResponseDto } from './dto/comment-response.dto'
-import { PaginatedCommentsResponseDto } from './dto/paginated-comments-response.dto'
+import {
+  CreateCommentDto,
+  GetCommentsQueryDto,
+  CommentResponseDto,
+  PaginatedCommentsResponseDto,
+} from './dto'
 
 @ApiTags('Comments')
 @Controller('tasks/:taskId/comments')

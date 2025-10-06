@@ -8,10 +8,12 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Comment } from './entities/comment.entity'
 import { Task } from '../tasks/entities/task.entity'
-import { CreateCommentDto } from './dto/create-comment.dto'
-import { GetCommentsQueryDto } from './dto/get-comments-query.dto'
-import { CommentResponseDto } from './dto/comment-response.dto'
-import { PaginatedCommentsResponseDto } from './dto/paginated-comments-response.dto'
+import {
+  CreateCommentDto,
+  GetCommentsQueryDto,
+  CommentResponseDto,
+  PaginatedCommentsResponseDto,
+} from './dto'
 import { EventsPublisherService } from '../events/events-publisher.service'
 import { AuthServiceClient } from 'src/common/clients/auth-service.client'
 

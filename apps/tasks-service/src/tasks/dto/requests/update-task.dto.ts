@@ -1,26 +1,25 @@
 import {
   IsString,
-  IsNotEmpty,
   IsOptional,
   IsEnum,
   IsDateString,
   IsArray,
   IsUUID,
 } from 'class-validator'
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { TaskStatus } from '../enums/task-status.enum'
-import { TaskPriority } from '../enums/task-priority.enum'
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { TaskStatus } from '../../enums/task-status.enum'
+import { TaskPriority } from '../../enums/task-priority.enum'
 
-export class CreateTaskDto {
-  @ApiProperty({
+export class UpdateTaskDto {
+  @ApiPropertyOptional({
     description: 'Task title',
     example: 'Implement user authentication',
     minLength: 1,
     maxLength: 255,
   })
   @IsString()
-  @IsNotEmpty()
-  title: string
+  @IsOptional()
+  title?: string
 
   @ApiPropertyOptional({
     description: 'Task description',
@@ -33,8 +32,7 @@ export class CreateTaskDto {
   @ApiPropertyOptional({
     description: 'Task status',
     enum: TaskStatus,
-    example: TaskStatus.TODO,
-    default: TaskStatus.TODO,
+    example: TaskStatus.IN_PROGRESS,
   })
   @IsEnum(TaskStatus)
   @IsOptional()
@@ -43,8 +41,7 @@ export class CreateTaskDto {
   @ApiPropertyOptional({
     description: 'Task priority',
     enum: TaskPriority,
-    example: TaskPriority.MEDIUM,
-    default: TaskPriority.MEDIUM,
+    example: TaskPriority.HIGH,
   })
   @IsEnum(TaskPriority)
   @IsOptional()
@@ -59,7 +56,8 @@ export class CreateTaskDto {
   deadline?: string
 
   @ApiPropertyOptional({
-    description: 'Array of user IDs to assign to this task',
+    description:
+      'Array of user IDs to assign to this task (replaces existing assignees)',
     example: ['550e8400-e29b-41d4-a716-446655440000'],
     type: [String],
   })

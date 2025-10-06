@@ -9,17 +9,18 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
 import { Task } from './entities/task.entity'
 import { TaskAssignment } from './entities/task-assignment.entity'
-import { CreateTaskDto } from './dto/create-task.dto'
-import { UpdateTaskDto } from './dto/update-task.dto'
-import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
-import { AssignUsersDto } from './dto/assign-users.dto'
-import { UnassignUsersDto } from './dto/unassign-users.dto'
-import { TaskResponseDto } from './dto/task-response.dto'
-import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
 import { EventsPublisherService } from '../events/events-publisher.service'
 import { AuthServiceClient } from '../common/clients/auth-service.client'
 import { TaskStatus } from './enums/task-status.enum'
 import { TaskPriority } from './enums/task-priority.enum'
+import {
+  AssignUsersDto,
+  CreateTaskDto,
+  GetTasksQueryDto,
+  UnassignUsersDto,
+  UpdateTaskDto,
+} from './dto/requests'
+import { PaginatedTasksResponseDto, TaskResponseDto } from './dto/responses'
 
 @Injectable()
 export class TasksService {

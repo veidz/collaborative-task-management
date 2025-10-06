@@ -1,0 +1,5 @@
+export { CommentsController } from './comments.controller'
+export { CommentsService } from './comments.service'
+export { CommentsModule } from './comments.module'
+export * from './dto'
+export * from './entities'

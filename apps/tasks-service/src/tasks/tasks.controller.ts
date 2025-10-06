@@ -21,13 +21,14 @@ import {
   ApiHeader,
 } from '@nestjs/swagger'
 import { TasksService } from './tasks.service'
-import { CreateTaskDto } from './dto/create-task.dto'
-import { UpdateTaskDto } from './dto/update-task.dto'
-import { GetTasksQueryDto } from './dto/get-tasks-query.dto'
-import { AssignUsersDto } from './dto/assign-users.dto'
-import { UnassignUsersDto } from './dto/unassign-users.dto'
-import { TaskResponseDto } from './dto/task-response.dto'
-import { PaginatedTasksResponseDto } from './dto/paginated-tasks-response.dto'
+import { PaginatedTasksResponseDto, TaskResponseDto } from './dto/responses'
+import {
+  AssignUsersDto,
+  CreateTaskDto,
+  GetTasksQueryDto,
+  UnassignUsersDto,
+  UpdateTaskDto,
+} from './dto/requests'
 
 @ApiTags('Tasks')
 @Controller('tasks')

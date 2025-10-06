@@ -13,13 +13,13 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger'
 import { Request } from 'express'
 import { AuthService } from './auth.service'
-import { RegisterDto } from './dto/register.dto'
-import { LoginDto } from './dto/login.dto'
-import { RefreshTokenDto } from './dto/refresh.dto'
-import { AuthResponseDto } from './dto/auth-response.dto'
-import { LoginResponseDto } from './dto/login-response.dto'
-import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto'
-import { ProfileResponseDto } from './dto/profile-response.dto'
+import {
+  AuthResponseDto,
+  LoginResponseDto,
+  ProfileResponseDto,
+  RefreshTokenResponseDto,
+} from './dto/responses'
+import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/requests'
 
 @ApiTags('Authentication')
 @Controller('auth')

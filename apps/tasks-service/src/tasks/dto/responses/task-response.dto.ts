@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { UserAssigneeDto } from './user-assignee.dto'
-import { TaskStatus } from '../enums/task-status.enum'
-import { TaskPriority } from '../enums/task-priority.enum'
+import { TaskStatus } from '../../enums/task-status.enum'
+import { TaskPriority } from '../../enums/task-priority.enum'
 
 export class TaskResponseDto {
   @ApiProperty({

@@ -9,8 +9,8 @@ import {
   IsUUID,
 } from 'class-validator'
 import { Type, Transform } from 'class-transformer'
-import { TaskStatus } from '../enums/task-status.enum'
-import { TaskPriority } from '../enums/task-priority.enum'
+import { TaskStatus } from '../../enums/task-status.enum'
+import { TaskPriority } from '../../enums/task-priority.enum'
 
 export class GetTasksQueryDto {
   @ApiPropertyOptional({

@@ -10,12 +10,12 @@ import { HttpService } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
 import { AxiosError } from 'axios'
-import { RegisterDto } from './dto/register.dto'
-import { LoginDto } from './dto/login.dto'
-import { RefreshTokenDto } from './dto/refresh-token.dto'
-import { AuthResponseDto } from './dto/auth-response.dto'
-import { LoginResponseDto } from './dto/login-response.dto'
-import { RefreshTokenResponseDto } from './dto/refresh-token-response.dto'
+import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/requests'
+import {
+  AuthResponseDto,
+  LoginResponseDto,
+  RefreshTokenResponseDto,
+} from './dto/responses'
 
 @Injectable()
 export class AuthService implements OnModuleInit {

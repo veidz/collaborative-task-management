@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
 import { User } from './entities/user.entity'
-import { UserResponseDto } from './dto/user-response.dto'
+import { UserResponseDto } from './dto/responses'
 
 @Injectable()
 export class UsersService {

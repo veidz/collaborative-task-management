@@ -17,10 +17,8 @@ import {
 } from '@nestjs/swagger'
 import { Request } from 'express'
 import { AuthService } from './auth.service'
-import { RegisterDto } from './dto/register.dto'
-import { LoginDto } from './dto/login.dto'
-import { RefreshTokenDto } from './dto/refresh-token.dto'
-import { JwtAuthGuard } from './guards/jwt-auth.guard'
+import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/requests'
+import { JwtAuthGuard } from './guards'
 
 @ApiTags('Authentication')
 @Controller('auth')
