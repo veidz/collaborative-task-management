@@ -18,10 +18,14 @@ RUN find . -name "*.tsbuildinfo" -type f -delete
 
 WORKDIR /app/apps/notifications-service
 
+COPY apps/notifications-service/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 ENV NODE_ENV=development
 
-EXPOSE 3001
+EXPOSE 3004
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["pnpm", "dev"]
 
 FROM base AS production
@@ -34,8 +38,12 @@ RUN ls -la /app/apps/notifications-service/dist/main.js
 
 WORKDIR /app/apps/notifications-service
 
+COPY apps/notifications-service/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 ENV NODE_ENV=production
 
-EXPOSE 3001
+EXPOSE 3004
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist/main.js"]
