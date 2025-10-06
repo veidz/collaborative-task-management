@@ -1,12 +1,18 @@
 # Sistema de Gerenciamento Colaborativo de Tarefas
 
-Uma plataforma moderna e escalável de gerenciamento de tarefas baseada em microsserviços, construída com NestJS, React e comunicação em tempo real.
+Uma plataforma de gerenciamento de tarefas baseada em microsserviços com comunicação em tempo real.
 
-## 🏗️ Visão Geral da Arquitetura
+## 📋 Índice
 
-Este projeto implementa uma **arquitetura de microsserviços** com padrão API Gateway, projetada para escalabilidade, manutenibilidade e colaboração em tempo real.
+- [Arquitetura](#-arquitetura)
+- [Decisões Técnicas e Trade-offs](#-decisões-técnicas-e-trade-offs)
+- [Problemas Conhecidos e Melhorias](#-problemas-conhecidos-e-melhorias)
+- [Tempo Gasto](#-tempo-gasto)
+- [Como Executar o Projeto](#-como-executar-o-projeto)
 
-### Arquitetura de Alto Nível
+## 🏗️ Arquitetura
+
+### Diagrama da Arquitetura
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -40,346 +46,475 @@ Este projeto implementa uma **arquitetura de microsserviços** com padrão API G
     └─────────┘      └──────────┘
 ```
 
-## 🔧 Stack de Tecnologias
+### Componentes
 
-### Backend
+- **Web App** (React + Vite): Interface do usuário com comunicação em tempo real
+- **API Gateway**: Ponto de entrada único, gerencia autenticação e roteamento
+- **Auth Service**: Gerenciamento de usuários e autenticação JWT
+- **Tasks Service**: CRUD de tarefas, comentários e atribuições
+- **Notifications Service**: Processamento e entrega de notificações em tempo real
+- **PostgreSQL**: Banco de dados relacional (database-per-service)
+- **RabbitMQ**: Message broker para comunicação assíncrona
 
-- **Framework**: NestJS (Node.js)
-- **Linguagem**: TypeScript
-- **Banco de Dados**: PostgreSQL com TypeORM
-- **Message Broker**: RabbitMQ
-- **Documentação de API**: Swagger/OpenAPI
-- **Autenticação**: JWT (Passport)
-- **Logging**: Pino
-- **Tempo Real**: Socket.io
+### Stack Tecnológico
 
-### Frontend
+**Backend:**
 
-- **Framework**: React
-- **Roteamento**: TanStack Router
-- **Gerenciamento de Estado**: Zustand + TanStack Query
-- **Componentes UI**: Radix UI + shadcn/ui
-- **Estilização**: Tailwind CSS
-- **Formulários**: React Hook Form + Zod
-- **Ferramenta de Build**: Vite
+- NestJS (Node.js/TypeScript)
+- TypeORM
+- JWT (Passport)
+- Socket.io
+- Pino (logging)
 
-### DevOps & Ferramentas
+**Frontend:**
 
-- **Monorepo**: Turborepo + pnpm workspaces
-- **Containerização**: Docker + Docker Compose
-- **Linting**: ESLint
-- **Formatação**: Prettier
-- **Git Hooks**: Husky + lint-staged
-- **Convenção de Commits**: Commitlint
+- React 19
+- TanStack Router & Query
+- Zustand
+- Tailwind CSS + shadcn/ui
+- Socket.io client
 
-## 📦 Estrutura do Projeto
+**Infraestrutura:**
 
-```
-collaborative-task-management/
-├── apps/                           # Serviços da aplicação
-│   ├── api-gateway/               # API Gateway Central
-│   │   ├── src/
-│   │   │   ├── auth/             # Proxy de autenticação
-│   │   │   ├── tasks/            # Proxy de tarefas
-│   │   │   ├── comments/         # Proxy de comentários
-│   │   │   ├── notifications/    # Proxy de notificações
-│   │   │   └── websocket/        # Gateway WebSocket
-│   │   └── Dockerfile
-│   │
-│   ├── auth-service/             # Autenticação & Gerenciamento de Usuários
-│   │   ├── src/
-│   │   │   ├── auth/             # Autenticação JWT
-│   │   │   └── users/            # CRUD de usuários
-│   │   ├── migrations/           # Migrações do banco de dados
-│   │   └── Dockerfile
-│   │
-│   ├── tasks-service/            # Gerenciamento de Tarefas & Comentários
-│   │   ├── src/
-│   │   │   ├── tasks/            # CRUD de tarefas & atribuições
-│   │   │   └── comments/         # Gerenciamento de comentários
-│   │   ├── migrations/           # Migrações do banco de dados
-│   │   └── Dockerfile
-│   │
-│   ├── notifications-service/    # Notificações em Tempo Real
-│   │   ├── src/
-│   │   │   ├── notifications/    # CRUD de notificações
-│   │   │   ├── websocket/        # Servidor WebSocket
-│   │   │   └── events/           # Consumidores de eventos
-│   │   ├── migrations/           # Migrações do banco de dados
-│   │   └── Dockerfile
-│   │
-│   └── web/                      # Frontend React
-│       ├── src/
-│       │   ├── components/       # Componentes UI reutilizáveis
-│       │   ├── pages/            # Componentes de páginas
-│       │   ├── hooks/            # Hooks React customizados
-│       │   ├── stores/           # Stores Zustand
-│       │   └── lib/              # Utilitários & cliente API
-│       └── Dockerfile
-│
-├── packages/                      # Pacotes compartilhados
-│   ├── types/                    # Tipos TypeScript compartilhados
-│   ├── utils/                    # Utilitários compartilhados
-│   ├── tsconfig/                 # Configurações TypeScript compartilhadas
-│   └── eslint-config/            # Configurações ESLint compartilhadas
-│
-├── docker/                        # Configuração Docker
-│   └── postgres/
-│       └── init.sql              # Inicialização do banco de dados
-│
-├── scripts/                       # Scripts utilitários
-│   └── setup.sh                  # Configuração do ambiente
-│
-├── docker-compose.yml            # Orquestração de serviços
-├── turbo.json                    # Configuração Turborepo
-├── pnpm-workspace.yaml           # Configuração workspace PNPM
-└── package.json                  # Configuração pacote raiz
-```
+- Docker & Docker Compose
+- PostgreSQL 17.5
+- RabbitMQ 3.13
+- Turborepo (monorepo)
 
-## 🎯 Responsabilidades dos Serviços
+## 🎯 Decisões Técnicas e Trade-offs
 
-### API Gateway (Porta 3001)
+### 1. Arquitetura de Microsserviços
 
-**Propósito**: Ponto de entrada único para todas as requisições do cliente
+**Decisão:** Dividir a aplicação em serviços independentes (auth, tasks, notifications).
 
-**Responsabilidades**:
+**Vantagens:**
 
-- Roteia requisições para os microsserviços apropriados
-- Valida tokens JWT e aplica autenticação
-- Agrega respostas de múltiplos serviços
-- Gerencia conexões WebSocket para atualizações em tempo real
-- Fornece documentação de API unificada via Swagger
+- Escalabilidade independente de cada serviço
+- Isolamento de falhas
+- Times podem trabalhar em paralelo
+- Tecnologias específicas por serviço (se necessário)
 
-**Recursos Principais**:
+**Trade-offs:**
 
-- Configuração CORS
-- Pipes de validação global
-- Tratamento de erros centralizado
-- Transformação de requisição/resposta
+- Maior complexidade operacional
+- Overhead de comunicação entre serviços
+- Transações distribuídas são complexas
+- Mais difícil de debugar
 
-### Auth Service (Porta 3002)
+**Alternativa considerada:** Monolito modular (mais simples, mas menos escalável)
 
-**Propósito**: Autenticação e autorização de usuários
+### 2. Database-per-Service
 
-**Responsabilidades**:
+**Decisão:** Cada serviço tem seu próprio banco de dados PostgreSQL.
 
-- Registro e login de usuários
-- Geração de tokens JWT (tokens de acesso e atualização)
-- Hash e validação de senha (bcrypt)
-- Gerenciamento de perfil de usuário
-- Endpoint de verificação de token
+**Vantagens:**
 
-**Banco de Dados**: `auth_service` (PostgreSQL)
+- Isolamento completo de dados
+- Serviços podem evoluir schemas independentemente
+- Melhor performance (sem contenção)
 
-- Tabelas: `users`
+**Trade-offs:**
 
-### Tasks Service (Porta 3003)
+- Joins entre serviços impossíveis
+- Consistência eventual (não ACID entre serviços)
+- Duplicação de dados pode ser necessária
 
-**Propósito**: Funcionalidade principal de gerenciamento de tarefas
+**Alternativa considerada:** Banco de dados compartilhado (mais simples, mas acoplamento alto)
 
-**Responsabilidades**:
+### 3. RabbitMQ para Comunicação Assíncrona
 
-- Operações CRUD de tarefas
-- Atribuição de tarefas a usuários
-- Gerenciamento de comentários em tarefas
-- Atualizações de status de tarefas
-- Publica eventos para RabbitMQ para notificações
+**Decisão:** Usar RabbitMQ para eventos entre serviços (ex: task.created → notification).
 
-**Banco de Dados**: `tasks_service` (PostgreSQL)
+**Vantagens:**
 
-- Tabelas: `tasks`, `comments`, `task_assignments`
+- Desacoplamento temporal
+- Resiliência (retry automático)
+- Backpressure handling
+- Garante entrega de mensagens
 
-**Publicação de Eventos**:
+**Trade-offs:**
 
-- `task.created`, `task.updated`, `task.deleted`
-- `task.assigned`, `task.unassigned`
-- `comment.created`
+- Adiciona complexidade
+- Consistência eventual
+- Precisa monitorar filas
 
-### Notifications Service (Porta 3004)
+**Alternativa considerada:** HTTP direto entre serviços (mais simples, mas menos resiliente)
 
-**Propósito**: Entrega de notificações em tempo real
+### 4. API Gateway Pattern
 
-**Responsabilidades**:
+**Decisão:** Usar um gateway central para todas as requisições do cliente.
 
-- Consome eventos do RabbitMQ
-- Cria registros de notificação
-- Entrega notificações em tempo real via WebSocket
-- CRUD de notificações e gerenciamento de status
-- Mantém conexões WebSocket
+**Vantagens:**
 
-**Banco de Dados**: `notifications_service` (PostgreSQL)
+- Ponto único de entrada
+- Autenticação centralizada
+- Rate limiting centralizado
+- Simplifica o cliente
 
-- Tabelas: `notifications`
+**Trade-offs:**
 
-**Consumidores de Eventos**:
+- Single point of failure
+- Pode virar gargalo
+- Adiciona latência
 
-- Escuta eventos de tarefas e comentários
-- Cria notificações específicas por usuário
+**Alternativa considerada:** Cliente comunica direto com cada serviço (mais complexo no frontend)
 
-### Aplicação Web (Porta 3000)
+### 5. Monorepo com Turborepo
 
-**Propósito**: Interface do usuário
+**Decisão:** Todos os serviços e frontend em um único repositório.
 
-**Responsabilidades**:
+**Vantagens:**
 
-- UI de autenticação (login/registro)
-- Dashboard e gerenciamento de tarefas
-- Exibição de notificações em tempo real
-- Formulários de criação e edição de tarefas
-- Threads de comentários
+- Código compartilhado fácil (types, utils)
+- Refactoring atômico
+- CI/CD simplificado
+- Versioning unificado
 
-**Tecnologias Principais**:
+**Trade-offs:**
 
-- TanStack Query para gerenciamento de estado do servidor
-- Zustand para gerenciamento de estado do cliente
-- Cliente Socket.io para conexões WebSocket
-- Radix UI para componentes acessíveis
+- Repositório grande
+- Build pode ser lento (mitigado por Turborepo)
+- Permissões granulares difíceis
 
-## 🔄 Padrões de Comunicação
+**Alternativa considerada:** Multi-repo (mais isolamento, mas complexidade de versionamento)
 
-### Comunicação Síncrona (HTTP/REST)
+### 6. TypeScript em Todo o Stack
 
-- **Cliente ↔ API Gateway**: Chamadas API REST
-- **API Gateway ↔ Serviços**: Requisições proxy HTTP via Axios
+**Decisão:** TypeScript tanto no backend quanto frontend.
 
-### Comunicação Assíncrona (Fila de Mensagens)
+**Vantagens:**
 
-- **Tasks Service → RabbitMQ**: Publica eventos de domínio
-- **Notifications Service ← RabbitMQ**: Consome eventos e cria notificações
+- Type safety end-to-end
+- Melhor DX (autocomplete, refactoring)
+- Menos bugs em runtime
+- Código compartilhado entre frontend/backend
 
-### Comunicação em Tempo Real (WebSocket)
+**Trade-offs:**
 
-- **Cliente ↔ API Gateway**: Conexão Socket.io
-- **API Gateway ↔ Notifications Service**: Conexão interna Socket.io
-- **Fluxo**: Notification Service → API Gateway → Cliente
+- Curva de aprendizado
+- Build step necessário
+- Configuração mais complexa
 
-## 🗄️ Arquitetura do Banco de Dados
+**Alternativa considerada:** JavaScript puro (mais simples, mas menos seguro)
 
-Cada serviço possui seu próprio banco de dados PostgreSQL seguindo o padrão **database-per-service**:
+## ⚠️ Problemas Conhecidos e Melhorias
 
-### auth_service
+### Problemas Conhecidos
 
-```sql
-users (id, email, password_hash, name, created_at, updated_at)
-```
+1. **Falta de Testes**
+   - **Impacto:** Alto risco de regressões
+   - **Solução:** Implementar testes unitários (Jest), integração (Supertest) e E2E (Playwright)
 
-### tasks_service
+2. **Sem Rate Limiting**
+   - **Impacto:** Vulnerável a ataques DDoS
+   - **Solução:** Adicionar rate limiting no API Gateway (ex: @nestjs/throttler)
 
-```sql
-tasks (id, title, description, status, priority, due_date, created_by, created_at, updated_at)
-comments (id, task_id, user_id, content, created_at, updated_at)
-task_assignments (id, task_id, user_id, assigned_at)
-```
+3. **Logs Não Centralizados**
+   - **Impacto:** Difícil debugar problemas em produção
+   - **Solução:** Integrar com ELK Stack ou similar (Datadog, New Relic)
 
-### notifications_service
+4. **Sem Monitoramento/Observabilidade**
+   - **Impacto:** Não sabemos se serviços estão saudáveis
+   - **Solução:** Prometheus + Grafana para métricas
 
-```sql
-notifications (id, user_id, type, title, message, is_read, related_id, created_at)
-```
+5. **Migrations Não Versionadas Adequadamente**
+   - **Impacto:** Pode causar problemas em deploys
+   - **Solução:** Automatizar migrations em CI/CD com rollback
 
-**Migrações**: Cada serviço gerencia suas próprias migrações usando TypeORM CLI.
+6. **Sem Backup Automatizado**
+   - **Impacto:** Perda de dados catastrófica
+   - **Solução:** Configurar backups automáticos do PostgreSQL
 
-## 🚀 Começando
+### Melhorias Futuras
+
+#### Curto Prazo (1-2 semanas)
+
+- [ ] **Adicionar validação de entrada rigorosa** em todos os endpoints
+- [ ] **Implementar refresh token rotation** para maior segurança
+- [ ] **Adicionar health checks** mais robustos (verificar DB, RabbitMQ)
+- [ ] **Documentar APIs** com mais exemplos no Swagger
+- [ ] **Adicionar seed data** para facilitar desenvolvimento
+
+#### Médio Prazo (1-2 meses)
+
+- [ ] **Implementar caching** (Redis) para reduzir carga no DB
+- [ ] **Adicionar busca full-text** nas tarefas (Elasticsearch ou pg_trgm)
+- [ ] **Implementar soft delete** para recuperação de dados
+- [ ] **Adicionar paginação** em todas as listagens
+- [ ] **Implementar upload de arquivos** (S3/MinIO)
+- [ ] **Circuit breaker** para chamadas entre serviços
+
+#### Longo Prazo (3+ meses)
+
+- [ ] **Migrar para Kubernetes** para melhor orquestração
+- [ ] **Implementar service mesh** (Istio) para observabilidade
+- [ ] **Event Sourcing** para auditoria completa
+- [ ] **GraphQL API** como alternativa ao REST
+- [ ] **Multi-tenancy** para suportar múltiplas organizações
+
+### Débito Técnico
+
+| Item               | Severidade | Esforço   | Prioridade |
+| ------------------ | ---------- | --------- | ---------- |
+| Testes             | 🔴 Alta    | 3 semanas | Alta       |
+| Rate Limiting      | 🟡 Média   | 2 dias    | Alta       |
+| Monitoring         | 🟡 Média   | 1 semana  | Média      |
+| Logs Centralizados | 🟡 Média   | 1 semana  | Média      |
+| Backups            | 🔴 Alta    | 2 dias    | Alta       |
+| Caching            | 🟢 Baixa   | 1 semana  | Baixa      |
+
+## ⏱️ Tempo Gasto
+
+### Planejamento e Design (8 horas)
+
+- Definição da arquitetura de microsserviços: 2h
+- Modelagem do banco de dados: 2h
+- Definição de APIs e contratos: 2h
+- Setup do monorepo e estrutura: 2h
+
+### Backend Development (39 horas)
+
+- **Auth Service** (7h)
+  - Setup NestJS + TypeORM: 2h
+  - Implementação JWT + refresh tokens: 3h
+  - CRUD de usuários: 2h
+
+- **Tasks Service** (12h)
+  - Setup + TypeORM entities: 2h
+  - CRUD de tarefas: 4h
+  - Sistema de comentários: 3h
+  - Atribuições de usuários: 2h
+  - Integração RabbitMQ: 1h
+
+- **Notifications Service** (10h)
+  - Setup + TypeORM: 2h
+  - Consumer RabbitMQ: 3h
+  - WebSocket server: 3h
+  - CRUD notificações: 2h
+
+- **API Gateway** (10h)
+  - Setup NestJS: 1h
+  - Proxy para serviços: 3h
+  - Autenticação centralizada: 3h
+  - WebSocket gateway: 2h
+  - Documentação Swagger: 1h
+
+### Frontend Development (20 horas)
+
+- Setup React + Vite + Tailwind: 2h
+- Configuração TanStack Router: 2h
+- Sistema de autenticação: 2h
+- Interface de tarefas (listagem/criação/edição): 6h
+- Sistema de comentários: 4h
+- WebSocket integration + notificações: 4h
+
+### DevOps e Infraestrutura (11 horas)
+
+- Docker Compose configuration: 3h
+- Dockerfiles para cada serviço: 3h
+- Setup PostgreSQL + RabbitMQ: 1h
+- Scripts de setup e migrations: 2h
+- Health checks e dependências: 2h
+
+### Documentação (5 horas)
+
+- README principal: 3h
+- Documentação de APIs: 2h
+
+### Debugging e Ajustes (10 horas)
+
+- Correção de bugs: 5h
+- Ajustes de configuração: 3h
+- Otimizações: 2h
+
+**Total: ~90 horas (~2 semanas de trabalho)**
+
+## 🚀 Como Executar o Projeto
 
 ### Pré-requisitos
 
-- Node.js >= 20.0.0
-- pnpm >= 10.0.0
-- Docker & Docker Compose
+**Apenas Docker é necessário:**
 
-### Instalação
+- Docker Desktop (ou Docker Engine + Docker Compose)
+- Git
 
-1. **Clone o repositório**
+> **Importante:** Não é necessário instalar Node.js, pnpm, PostgreSQL ou RabbitMQ localmente. Tudo roda dentro de containers!
+
+### Passo a Passo
+
+#### 1. Clone o Repositório
 
 ```bash
 git clone git@github.com:veidz/collaborative-task-management.git
 cd collaborative-task-management
 ```
 
-2. **Instale as dependências**
-
-```bash
-pnpm install
-```
-
-3. **Inicie todos os serviços**
+#### 2. Inicie Todos os Serviços
 
 ```bash
 docker-compose up
 ```
 
-Isto irá iniciar:
+**O que acontece automaticamente:**
 
-- PostgreSQL (porta 5432)
-- RabbitMQ (porta 5672, interface de gerenciamento na porta 15672)
-- Auth Service (porta 3002)
-- Tasks Service (porta 3003)
-- Notifications Service (porta 3004)
-- API Gateway (porta 3001)
-- Aplicação Web (porta 3000)
+1. ✅ Container `setup` cria arquivos `.env` baseado nos `.env.example` de cada serviço
+2. ✅ PostgreSQL inicializa e cria os bancos de dados necessários:
+   - `auth_service`
+   - `tasks_service`
+   - `notifications_service`
+3. ✅ RabbitMQ inicia o message broker
+4. ✅ Cada serviço backend:
+   - Instala dependências (pnpm install)
+   - Executa migrations do banco de dados
+   - Inicia em modo desenvolvimento com hot-reload
+5. ✅ API Gateway aguarda todos os serviços estarem saudáveis (health checks)
+6. ✅ Frontend compila e inicia com Vite
 
-4. **Acesse a aplicação**
+**Primeira execução:** Pode levar 5-10 minutos (build das imagens + instalação de dependências)
 
-- Interface Web: http://localhost:3000
-- API Gateway: http://localhost:3001
-- Documentação da API: http://localhost:3001/api/docs
-- Gerenciamento RabbitMQ: http://localhost:15672 (usuário: rabbitmq, senha: rabbitmq)
+**Execuções seguintes:** ~1 minuto (usa cache)
 
-## 📊 Monitoramento & Verificações de Saúde (Health Check)
+#### 3. Acesse a Aplicação
 
-Cada serviço expõe um endpoint de health check:
+Aguarde até ver as mensagens de sucesso nos logs. Então acesse:
 
-- Auth Service: `http://localhost:3002/health`
-- Tasks Service: `http://localhost:3003/health`
-- Notifications Service: `http://localhost:3004/health`
-- API Gateway: `http://localhost:3001/health`
+| Serviço            | URL                            | Credenciais                          |
+| ------------------ | ------------------------------ | ------------------------------------ |
+| **Interface Web**  | http://localhost:3000          | -                                    |
+| **API Gateway**    | http://localhost:3001          | -                                    |
+| **Swagger Docs**   | http://localhost:3001/api/docs | -                                    |
+| **RabbitMQ Admin** | http://localhost:15672         | user: `rabbitmq`<br>pass: `rabbitmq` |
 
-O Docker Compose está configurado com health check para todos os serviços com políticas de reinicialização automática.
+**Para criar uma conta:**
 
-## 🎨 Padrões de Design & Melhores Práticas
+1. Acesse http://localhost:3000
+2. Clique em "Registrar"
+3. Preencha o formulário
+4. Faça login e comece a usar!
 
-### Padrões Arquiteturais
+### Comandos Úteis
 
-- **Arquitetura de Microsserviços**: Serviços independentes e fracamente acoplados
-- **Padrão API Gateway**: Ponto de entrada único para clientes
-- **Arquitetura Orientada a Eventos**: Comunicação assíncrona via filas de mensagens
-- **Banco de Dados por Serviço**: Cada serviço possui seus próprios dados
+```bash
+# Iniciar em modo background (detached)
+docker-compose up -d
 
-### Padrões de Desenvolvimento
+# Ver logs de todos os serviços
+docker-compose logs -f
 
-- **Padrão Repository**: Abstração de acesso a dados (TypeORM)
-- **Padrão DTO**: Validação e transformação de dados
-- **Injeção de Dependência**: Gerenciada pelo NestJS
-- **Padrão Strategy**: Autenticação JWT via Passport
+# Ver logs de um serviço específico
+docker-compose logs -f api-gateway
+docker-compose logs -f web
 
-### Organização de Código
+# Parar todos os serviços
+docker-compose down
 
-- **Estrutura Modular**: Módulos baseados em funcionalidades no NestJS
-- **Monorepo**: Código compartilhado em pacotes
-- **Type Safety**: Tipos compartilhados entre serviços
-- **Gerenciamento de Configuração**: Configuração baseada em ambiente com validação
+# Parar e REMOVER volumes (limpa banco de dados)
+docker-compose down -v
 
-## 🔒 Segurança
+# Rebuild após mudanças no código ou dependências
+docker-compose up --build
 
-- **Autenticação JWT**: Autenticação stateless com tokens de acesso/atualização
-- **Hash de Senha**: Bcrypt com salt rounds
-- **Validação de Entrada**: DTOs com class-validator
-- **Configuração CORS**: Acesso controlado por origem
-- **Rate Limiting**: (Recomendado para produção)
-- **Segredos de Ambiente**: Nunca commitados no controle de versão
+# Rebuild de um serviço específico
+docker-compose up --build tasks-service
 
-## 📈 Considerações de Escalabilidade
+# Restart de um serviço
+docker-compose restart notifications-service
 
-- **Escalonamento Horizontal**: Serviços podem ser escalados independentemente
-- **Fila de Mensagens**: Desacopla serviços e habilita processamento assíncrono
-- **Banco de Dados por Serviço**: Escalonamento e otimização independentes
-- **Serviços Stateless**: Sem estado de sessão nos serviços
-- **WebSocket Gateway**: Gerenciamento de conexão centralizado
+# Executar comando dentro de um container
+docker-compose exec tasks-service sh
+docker-compose exec tasks-service pnpm migration:run
+```
 
-## 📝 Documentação da API
+### Troubleshooting
 
-A documentação interativa da API está disponível via Swagger UI:
+#### ❌ Porta já está em uso
 
-- http://localhost:3001/api/docs
+```bash
+# Verifique qual processo está usando a porta
+lsof -i :3000  # ou :3001, :3002, etc
 
-Todos os endpoints estão documentados com schemas de requisição/resposta, requisitos de autenticação e exemplos de payloads.
+# Pare os containers
+docker-compose down
+
+# Ou mude a porta no docker-compose.yml
+```
+
+#### ❌ Serviço não inicia ou fica reiniciando
+
+```bash
+# Veja os logs do serviço
+docker-compose logs -f <nome-do-servico>
+
+# Exemplos comuns:
+# - Arquivo .env não foi criado (execute: docker-compose up setup)
+# - Porta em uso (veja solução acima)
+# - Erro de migration (verifique logs do PostgreSQL)
+```
+
+#### ❌ Erro de conexão com banco de dados
+
+```bash
+# Verifique se o PostgreSQL está rodando
+docker-compose ps postgres
+
+# Veja os logs
+docker-compose logs -f postgres
+
+# Recrie o banco (ATENÇÃO: apaga todos os dados)
+docker-compose down -v
+docker-compose up
+```
+
+#### ❌ Mudanças no código não aparecem
+
+**Backend (NestJS):** Hot-reload automático, mas às vezes precisa rebuild:
+
+```bash
+docker-compose up --build <servico>
+```
+
+**Frontend (Vite):** Hot-reload funciona automaticamente. Se não funcionar:
+
+```bash
+docker-compose restart web
+```
+
+#### 🔄 Resetar Tudo e Começar do Zero
+
+```bash
+# Remove containers, volumes e imagens
+docker-compose down -v --rmi local
+
+# Inicia novamente
+docker-compose up --build
+```
+
+### Verificação de Saúde
+
+Cada serviço expõe um endpoint `/health`:
+
+```bash
+curl http://localhost:3001/health  # API Gateway
+curl http://localhost:3002/health  # Auth Service
+curl http://localhost:3003/health  # Tasks Service
+curl http://localhost:3004/health  # Notifications Service
+```
+
+Resposta esperada: `{"status":"ok"}`
+
+### Estrutura de Portas
+
+| Serviço       | Porta | Descrição       |
+| ------------- | ----- | --------------- |
+| Web           | 3000  | Frontend React  |
+| API Gateway   | 3001  | Gateway central |
+| Auth Service  | 3002  | Autenticação    |
+| Tasks Service | 3003  | Tarefas         |
+| Notifications | 3004  | Notificações    |
+| PostgreSQL    | 5432  | Banco de dados  |
+| RabbitMQ      | 5672  | AMQP            |
+| RabbitMQ UI   | 15672 | Interface web   |
+
+### Variáveis de Ambiente
+
+Cada serviço tem seu próprio arquivo `.env` em `apps/<servico>/.env`, criado automaticamente pelo container `setup` baseado no `.env.example`.
