@@ -38,7 +38,7 @@ const getNotificationIcon = (type: NotificationType) => {
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const { data: unreadData } = useUnreadCount()
-  const { data: notificationsData } = useNotifications(1, 5, false)
+  const { data: notificationsData, refetch } = useNotifications(1, 10, false)
   const markAsRead = useMarkAsRead()
   const markAllAsRead = useMarkAllAsRead()
 
@@ -53,8 +53,15 @@ export function NotificationBell() {
     markAllAsRead.mutate()
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen)
+    if (isOpen) {
+      refetch()
+    }
+  }
+
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant='ghost' size='icon' className='relative'>
           <Bell className='h-5 w-5' />

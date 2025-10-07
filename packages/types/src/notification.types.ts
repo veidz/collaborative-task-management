@@ -1,9 +1,9 @@
 export enum NotificationType {
-  TASK_CREATED = 'task_created',
-  TASK_UPDATED = 'task_updated',
-  TASK_ASSIGNED = 'task_assigned',
-  TASK_DELETED = 'task_deleted',
-  COMMENT_CREATED = 'comment_created',
+  TASK_CREATED = 'TASK_CREATED',
+  TASK_UPDATED = 'TASK_UPDATED',
+  TASK_ASSIGNED = 'TASK_ASSIGNED',
+  TASK_DELETED = 'TASK_DELETED',
+  COMMENT_CREATED = 'COMMENT_CREATED',
 }
 
 export interface NotificationResponse {

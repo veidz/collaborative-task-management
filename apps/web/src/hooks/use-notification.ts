@@ -26,6 +26,9 @@ export function useNotifications(page = 1, limit = 10, unreadOnly = false) {
       )
       return data
     },
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   })
 }
 

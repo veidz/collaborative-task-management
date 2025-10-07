@@ -49,12 +49,23 @@ export function useWebSocket() {
 
   const onNotification = useCallback(
     (callback: (notification: NotificationPayload) => void) => {
-      if (!socket) return () => {}
+      if (!socket) {
+        console.log('[useWebSocket] onNotification called but socket is null')
+        return () => {}
+      }
 
-      socket.on('notification', callback)
+      console.log('[useWebSocket] Subscribing to notification event')
+
+      const wrappedCallback = (notification: NotificationPayload) => {
+        console.log('[useWebSocket] Notification event received:', notification)
+        callback(notification)
+      }
+
+      socket.on('notification', wrappedCallback)
 
       return () => {
-        socket.off('notification', callback)
+        console.log('[useWebSocket] Unsubscribing from notification event')
+        socket.off('notification', wrappedCallback)
       }
     },
     [socket],

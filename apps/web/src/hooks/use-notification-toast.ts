@@ -46,7 +46,11 @@ export function useNotificationToast() {
   const { onNotification } = useWebSocket()
 
   useEffect(() => {
+    console.log('[useNotificationToast] Setting up notification listener')
+
     const unsubscribe = onNotification((notification) => {
+      console.log('[useNotificationToast] Notification received:', notification)
+
       const Icon = getNotificationIcon(notification.type as NotificationType)
       const color = getNotificationColor(notification.type as NotificationType)
 
@@ -56,6 +60,8 @@ export function useNotificationToast() {
           : color === 'error'
             ? toast.error
             : toast.info
+
+      console.log('[useNotificationToast] Showing toast with color:', color)
 
       toastFn(notification.message, {
         icon: createElement(Icon, { className: 'h-5 w-5' }),
@@ -69,6 +75,9 @@ export function useNotificationToast() {
       })
     })
 
-    return unsubscribe
+    return () => {
+      console.log('[useNotificationToast] Cleaning up notification listener')
+      unsubscribe()
+    }
   }, [onNotification])
 }

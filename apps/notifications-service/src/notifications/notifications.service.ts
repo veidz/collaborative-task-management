@@ -18,24 +18,46 @@ export class NotificationsService {
     private readonly notificationsRepository: NotificationsRepository,
   ) {}
 
-  async createFromTaskCreated(event: TaskCreatedEvent): Promise<Notification> {
+  async createFromTaskCreated(
+    event: TaskCreatedEvent,
+  ): Promise<Notification[]> {
     this.logger.log(
-      `Creating notification for task.created event: ${event.taskId}`,
+      `Creating notifications for task.created event: ${event.taskId}`,
     )
 
-    const message = `New task created: "${event.title}"`
+    const notifications: Notification[] = []
 
-    const notification = this.notificationsRepository.create({
+    const creatorMessage = `New task created: "${event.title}"`
+    const creatorNotification = this.notificationsRepository.create({
       userId: event.createdById,
       type: NotificationType.TASK_CREATED,
-      message,
+      message: creatorMessage,
     })
+    notifications.push(
+      await this.notificationsRepository.save(creatorNotification),
+    )
 
-    const saved = await this.notificationsRepository.save(notification)
+    if (event.assigneeIds && event.assigneeIds.length > 0) {
+      for (const assigneeId of event.assigneeIds) {
+        if (assigneeId !== event.createdById) {
+          const assigneeMessage = `You were assigned to task: "${event.title}"`
+          const assigneeNotification = this.notificationsRepository.create({
+            userId: assigneeId,
+            type: NotificationType.TASK_CREATED,
+            message: assigneeMessage,
+          })
+          notifications.push(
+            await this.notificationsRepository.save(assigneeNotification),
+          )
+        }
+      }
+    }
 
-    this.logger.log(`Notification created: ${saved.id}`)
+    this.logger.log(
+      `Created ${notifications.length} notification(s) for task ${event.taskId}`,
+    )
 
-    return saved
+    return notifications
   }
 
   async createFromTaskUpdated(event: TaskUpdatedEvent): Promise<Notification> {

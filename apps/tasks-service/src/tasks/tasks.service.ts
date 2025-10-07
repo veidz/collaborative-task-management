@@ -106,7 +106,9 @@ export class TasksService {
     const queryBuilder = this.tasksRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.assignments', 'assignment')
-      .where('task.createdBy = :userId', { userId })
+      .where('(task.createdBy = :userId OR assignment.userId = :userId)', {
+        userId,
+      })
       .orderBy('task.createdAt', 'DESC')
       .skip(skip)
       .take(limit)

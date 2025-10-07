@@ -145,17 +145,23 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
   private async handleTaskCreated(event: TaskCreatedEvent): Promise<void> {
     this.logger.log(`Handling task.created event for task: ${event.taskId}`)
 
-    const notification =
+    const notifications =
       await this.notificationsService.createFromTaskCreated(event)
 
-    this.notificationsGateway.sendNotificationToUser(event.createdById, {
-      id: notification.id,
-      userId: notification.userId,
-      type: notification.type,
-      message: notification.message,
-      read: notification.read,
-      createdAt: notification.createdAt,
-    })
+    for (const notification of notifications) {
+      this.notificationsGateway.sendNotificationToUser(notification.userId, {
+        id: notification.id,
+        userId: notification.userId,
+        type: notification.type,
+        message: notification.message,
+        read: notification.read,
+        createdAt: notification.createdAt,
+      })
+    }
+
+    this.logger.log(
+      `Sent ${notifications.length} notification(s) for task ${event.taskId}`,
+    )
   }
 
   private async handleTaskUpdated(event: TaskUpdatedEvent): Promise<void> {
