@@ -26,7 +26,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -37,6 +38,7 @@ services:
     image: rabbitmq:3.13-management-alpine
     container_name: collaborative-task-management-rabbitmq
     restart: unless-stopped
+    user: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: rabbitmq
       RABBITMQ_DEFAULT_PASS: rabbitmq
@@ -49,7 +51,8 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -83,7 +86,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 120s
+      start_period: 80s
     networks:
       - collaborative-task-management-network
 
@@ -118,7 +121,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 120s
+      start_period: 80s
     networks:
       - collaborative-task-management-network
 
@@ -151,7 +154,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 120s
+      start_period: 80s
     networks:
       - collaborative-task-management-network
 
@@ -186,7 +189,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 120s
+      start_period: 80s
     networks:
       - collaborative-task-management-network
 
