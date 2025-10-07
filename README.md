@@ -371,7 +371,7 @@ pnpm --filter @packages/types build
 pnpm --filter @packages/utils build
 ```
 
-> **Por que fazer build antes?** Os serviços NestJS importam os pacotes compartilhados (`@packages/types` e `@packages/utils`). O build local garante que os arquivos `.d.ts` e `.js` estejam disponíveis antes de iniciar os containers.
+> **Por que fazer build antes?** Os serviços NestJS importam os pacotes compartilhados (`@packages/types` e `@packages/utils`). O build local garante que os arquivos `.d.ts` e `.js` estejam disponíveis antes de iniciar os containers. Note que `@packages/utils` contém utilitários como logger config e health checks, mas NÃO contém providers/guards/decorators NestJS (que precisam ficar locais por questões de injeção de dependência).
 
 #### 3. Inicie Todos os Serviços com Docker
 

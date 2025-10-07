@@ -178,6 +178,7 @@ export function CreateTaskModal({ open, onOpenChange }: CreateTaskModalProps) {
                   <SelectItem value={TaskStatus.IN_PROGRESS}>
                     In Progress
                   </SelectItem>
+                  <SelectItem value={TaskStatus.REVIEW}>Review</SelectItem>
                   <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
                   <SelectItem value={TaskStatus.CANCELLED}>
                     Cancelled

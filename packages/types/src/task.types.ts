@@ -1,16 +1,16 @@
 export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
 }
 
 export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  REVIEW = 'review',
-  DONE = 'done',
-  CANCELLED = 'cancelled',
+  TODO = 'TODO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  REVIEW = 'REVIEW',
+  DONE = 'DONE',
+  CANCELLED = 'CANCELLED',
 }
 
 export interface CreateTaskDto {

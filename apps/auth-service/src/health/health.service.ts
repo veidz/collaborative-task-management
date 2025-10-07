@@ -1,14 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { HealthResponseDto } from './dto/health-response.dto'
+import { BaseHealthService } from '@packages/utils'
 
 @Injectable()
-export class HealthService {
-  getHealth(): HealthResponseDto {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      service: 'auth-service',
-      version: '1.0.0',
-    }
+export class HealthService extends BaseHealthService {
+  constructor() {
+    super('auth-service', '1.0.0')
   }
 }

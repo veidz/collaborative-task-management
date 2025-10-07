@@ -13,6 +13,7 @@ import { JwtStrategy } from '../common/strategies/jwt.strategy'
   imports: [
     TypeOrmModule.forFeature([Notification]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
