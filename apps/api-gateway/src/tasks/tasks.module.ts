@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { HttpModule } from '@nestjs/axios'
 import { TasksController } from './tasks.controller'
 import { TasksService } from './tasks.service'
+import { ErrorHandlerService } from '../common/services/error-handler.service'
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { TasksService } from './tasks.service'
     }),
   ],
   controllers: [TasksController],
-  providers: [TasksService],
+  providers: [TasksService, ErrorHandlerService],
 })
 export class TasksModule {}

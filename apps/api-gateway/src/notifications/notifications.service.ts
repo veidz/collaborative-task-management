@@ -1,30 +1,27 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-  BadRequestException,
-  NotFoundException,
-  InternalServerErrorException,
-} from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config'
-import { firstValueFrom } from 'rxjs'
-import { AxiosError } from 'axios'
 import { GetNotificationsQueryDto } from './dto/get-notifications-query.dto'
 import { NotificationResponseDto } from './dto/notification-response.dto'
 import { PaginatedNotificationsResponseDto } from './dto/paginated-notifications-response.dto'
 import { UnreadCountResponseDto } from './dto/unread-count-response.dto'
+import { HttpProxyService } from '../common/services/http-proxy.service'
+import { ErrorHandlerService } from '../common/services/error-handler.service'
 
 @Injectable()
-export class NotificationsService implements OnModuleInit {
-  private readonly logger = new Logger(NotificationsService.name)
-  private readonly notificationsServiceUrl: string
+export class NotificationsService extends HttpProxyService {
+  protected readonly logger = new Logger(NotificationsService.name)
+  protected readonly serviceUrl: string
+  protected readonly serviceName = 'Notifications Service'
 
   constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
+    httpService: HttpService,
+    errorHandler: ErrorHandlerService,
+    configService: ConfigService,
   ) {
-    const url = this.configService.get<string>('services.notifications.url')
+    super(httpService, errorHandler)
+
+    const url = configService.get<string>('services.notifications.url')
 
     if (!url) {
       throw new Error(
@@ -32,13 +29,7 @@ export class NotificationsService implements OnModuleInit {
       )
     }
 
-    this.notificationsServiceUrl = url
-  }
-
-  onModuleInit() {
-    this.logger.log(
-      `Notifications service URL configured: ${this.notificationsServiceUrl}`,
-    )
+    this.serviceUrl = url
   }
 
   async findAll(
@@ -48,49 +39,27 @@ export class NotificationsService implements OnModuleInit {
     this.logger.log(
       'Proxying get all notifications request to notifications-service',
     )
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get<PaginatedNotificationsResponseDto>(
-          `${this.notificationsServiceUrl}/notifications`,
-          {
-            params: query,
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        ),
-      )
-
-      this.logger.log('Notifications retrieved successfully via proxy')
-      return response.data
-    } catch (error) {
-      this.handleError(error, 'Failed to get notifications')
-    }
+    const result = await this.get<PaginatedNotificationsResponseDto>(
+      '/notifications',
+      undefined,
+      token,
+      query as Record<string, unknown>,
+    )
+    this.logger.log('Notifications retrieved successfully via proxy')
+    return result
   }
 
   async getUnreadCount(token: string): Promise<UnreadCountResponseDto> {
     this.logger.log(
       'Proxying get unread count request to notifications-service',
     )
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get<UnreadCountResponseDto>(
-          `${this.notificationsServiceUrl}/notifications/unread-count`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        ),
-      )
-
-      this.logger.log('Unread count retrieved successfully via proxy')
-      return response.data
-    } catch (error) {
-      this.handleError(error, 'Failed to get unread count')
-    }
+    const result = await this.get<UnreadCountResponseDto>(
+      '/notifications/unread-count',
+      undefined,
+      token,
+    )
+    this.logger.log('Unread count retrieved successfully via proxy')
+    return result
   }
 
   async markAsRead(
@@ -100,82 +69,27 @@ export class NotificationsService implements OnModuleInit {
     this.logger.log(
       `Proxying mark notification ${id} as read request to notifications-service`,
     )
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.put<NotificationResponseDto>(
-          `${this.notificationsServiceUrl}/notifications/${id}/read`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        ),
-      )
-
-      this.logger.log(
-        `Notification ${id} marked as read successfully via proxy`,
-      )
-      return response.data
-    } catch (error) {
-      this.handleError(error, `Failed to mark notification ${id} as read`)
-    }
+    const result = await this.put<NotificationResponseDto>(
+      `/notifications/${id}/read`,
+      {},
+      undefined,
+      token,
+    )
+    this.logger.log(`Notification ${id} marked as read successfully via proxy`)
+    return result
   }
 
   async markAllAsRead(token: string): Promise<{ updated: number }> {
     this.logger.log(
       'Proxying mark all notifications as read request to notifications-service',
     )
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.put<{ updated: number }>(
-          `${this.notificationsServiceUrl}/notifications/read-all`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        ),
-      )
-
-      this.logger.log('All notifications marked as read successfully via proxy')
-      return response.data
-    } catch (error) {
-      this.handleError(error, 'Failed to mark all notifications as read')
-    }
-  }
-
-  private handleError(error: unknown, message: string): never {
-    if (error instanceof AxiosError) {
-      const status = error.response?.status
-      const responseMessage = error.response?.data?.message || error.message
-
-      this.logger.error(`${message}: ${responseMessage}`)
-
-      if (status === 400) {
-        throw new BadRequestException(responseMessage)
-      }
-
-      if (status === 404) {
-        throw new NotFoundException(responseMessage)
-      }
-
-      if (status === 401 || status === 403) {
-        throw new BadRequestException('Unauthorized')
-      }
-
-      throw new InternalServerErrorException(responseMessage)
-    }
-
-    if (error instanceof Error) {
-      this.logger.error(`${message}: ${error.message}`)
-      throw new InternalServerErrorException(error.message)
-    }
-
-    this.logger.error(`${message}: Unknown error`)
-    throw new InternalServerErrorException('An unexpected error occurred')
+    const result = await this.put<{ updated: number }>(
+      '/notifications/read-all',
+      {},
+      undefined,
+      token,
+    )
+    this.logger.log('All notifications marked as read successfully via proxy')
+    return result
   }
 }
