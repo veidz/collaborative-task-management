@@ -130,4 +130,18 @@ export class AuthController {
     this.logger.log(`Profile request received for user: ${userId}`)
     return this.authService.getProfile(userId)
   }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully logged out',
+  })
+  async logout(): Promise<{ message: string }> {
+    // For now, logout is handled on the client side by clearing tokens
+    // In the future, we could implement token blacklisting here
+    this.logger.log('Logout request received')
+    return { message: 'Logged out successfully' }
+  }
 }

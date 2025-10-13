@@ -1,15 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger'
+import { UserDataDto } from './user-data.dto'
 
 export class AuthResponseDto {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string
+  @ApiProperty({ type: UserDataDto })
+  user: UserDataDto
 
-  @ApiProperty({ example: 'user@example.com' })
-  email: string
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'JWT access token (expires in 15 minutes)',
+  })
+  accessToken: string
 
-  @ApiProperty({ example: 'johndoe' })
-  username: string
-
-  @ApiProperty({ example: '2025-10-02T17:26:16.000Z' })
-  createdAt: Date
+  @ApiProperty({
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description: 'JWT refresh token (expires in 7 days)',
+  })
+  refreshToken: string
 }

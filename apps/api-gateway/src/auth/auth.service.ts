@@ -78,4 +78,11 @@ export class AuthService extends HttpProxyService {
     this.logger.log(`Users retrieved successfully for user: ${userId}`)
     return result
   }
+
+  async logout(): Promise<{ message: string }> {
+    this.logger.log('Proxying logout request')
+    const result = await this.post<{ message: string }>('/auth/logout', {})
+    this.logger.log('Logout successful')
+    return result
+  }
 }

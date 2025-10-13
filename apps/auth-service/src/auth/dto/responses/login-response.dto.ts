@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { AuthResponseDto } from './auth-response.dto'
+import { UserDataDto } from './user-data.dto'
 
 export class LoginResponseDto {
-  @ApiProperty({ type: AuthResponseDto })
-  user: AuthResponseDto
+  @ApiProperty({ type: UserDataDto })
+  user: UserDataDto
 
   @ApiProperty({
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',

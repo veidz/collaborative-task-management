@@ -4,6 +4,7 @@ import { RegisterDto } from '../dto/requests'
 import { AuthResponseDto } from '../dto/responses'
 import { PasswordHasher } from '../utils/password-hasher'
 import { UserMapper } from '../mappers/user.mapper'
+import { TokenGenerator } from '../utils/token-generator'
 
 @Injectable()
 export class RegisterUseCase {
@@ -13,6 +14,7 @@ export class RegisterUseCase {
     private readonly usersRepository: UsersRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly userMapper: UserMapper,
+    private readonly tokenGenerator: TokenGenerator,
   ) {}
 
   async execute(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -28,9 +30,24 @@ export class RegisterUseCase {
       hashedPassword,
     )
 
+    const accessToken = this.tokenGenerator.generateAccessToken(
+      user.id,
+      user.email,
+      user.username,
+    )
+    const refreshToken = this.tokenGenerator.generateRefreshToken(
+      user.id,
+      user.email,
+      user.username,
+    )
+
     this.logger.log(`User registered successfully: ${user.id}`)
 
-    return this.userMapper.toAuthResponseDto(user)
+    return {
+      user: this.userMapper.toUserData(user),
+      accessToken,
+      refreshToken,
+    }
   }
 
   private async validateUserDoesNotExist(

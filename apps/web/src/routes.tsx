@@ -52,9 +52,15 @@ const authenticatedRoute = createRoute({
   id: 'authenticated',
   beforeLoad: () => {
     const token = localStorage.getItem('accessToken')
+    console.log(
+      '🔒 Authenticated route beforeLoad, token:',
+      token ? 'EXISTS' : 'MISSING',
+    )
     if (!token) {
+      console.log('❌ No token, redirecting to /login')
       throw redirect({ to: '/login' })
     }
+    console.log('✅ Token found, allowing access')
   },
   component: AuthenticatedLayout,
 })

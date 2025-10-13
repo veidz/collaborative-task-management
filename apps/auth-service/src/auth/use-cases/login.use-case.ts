@@ -42,7 +42,7 @@ export class LoginUseCase {
     this.logger.log(`User logged in successfully: ${user.id}`)
 
     return {
-      user: this.userMapper.toAuthResponseDto(user),
+      user: this.userMapper.toUserData(user),
       accessToken,
       refreshToken,
     }

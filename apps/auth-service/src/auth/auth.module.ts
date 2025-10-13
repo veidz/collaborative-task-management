@@ -12,7 +12,6 @@ import {
   RefreshTokenUseCase,
   GetProfileUseCase,
 } from './use-cases'
-import { UserMapper } from './mappers/user.mapper'
 import { TokenGenerator } from './utils/token-generator'
 import { PasswordHasher } from './utils/password-hasher'
 
@@ -50,10 +49,9 @@ import { PasswordHasher } from './utils/password-hasher'
     RefreshTokenUseCase,
     GetProfileUseCase,
     // Utils
-    UserMapper,
     TokenGenerator,
     PasswordHasher,
   ],
-  exports: [JwtModule, PassportModule, AuthService, UserMapper],
+  exports: [JwtModule, PassportModule, AuthService],
 })
 export class AuthModule {}

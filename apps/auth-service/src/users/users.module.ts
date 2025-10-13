@@ -9,6 +9,7 @@ import {
   FindAllUsersUseCase,
   FindUserByIdUseCase,
 } from './use-cases'
+import { UserMapper } from '../auth/mappers/user.mapper'
 
 @Module({
   imports: [TypeOrmModule.forFeature([User])],
@@ -20,7 +21,9 @@ import {
     ValidateUsersUseCase,
     FindAllUsersUseCase,
     FindUserByIdUseCase,
+    // Mappers
+    UserMapper,
   ],
-  exports: [UsersService, UsersRepository, TypeOrmModule],
+  exports: [UsersService, UsersRepository, TypeOrmModule, UserMapper],
 })
 export class UsersModule {}
