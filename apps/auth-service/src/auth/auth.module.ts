@@ -6,6 +6,15 @@ import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { UsersModule } from '../users/users.module'
 import { JwtStrategy } from './strategies/jwt.strategy'
+import {
+  RegisterUseCase,
+  LoginUseCase,
+  RefreshTokenUseCase,
+  GetProfileUseCase,
+} from './use-cases'
+import { UserMapper } from './mappers/user.mapper'
+import { TokenGenerator } from './utils/token-generator'
+import { PasswordHasher } from './utils/password-hasher'
 
 @Module({
   imports: [
@@ -32,7 +41,19 @@ import { JwtStrategy } from './strategies/jwt.strategy'
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [JwtModule, PassportModule, AuthService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    // Use Cases
+    RegisterUseCase,
+    LoginUseCase,
+    RefreshTokenUseCase,
+    GetProfileUseCase,
+    // Utils
+    UserMapper,
+    TokenGenerator,
+    PasswordHasher,
+  ],
+  exports: [JwtModule, PassportModule, AuthService, UserMapper],
 })
 export class AuthModule {}
