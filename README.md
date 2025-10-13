@@ -4,11 +4,276 @@ Uma plataforma de gerenciamento de tarefas baseada em microsserviços com comuni
 
 ## 📋 Índice
 
+- [Como Executar o Projeto](#-como-executar-o-projeto)
 - [Arquitetura](#-arquitetura)
 - [Decisões Técnicas e Trade-offs](#-decisões-técnicas-e-trade-offs)
 - [Problemas Conhecidos e Melhorias](#-problemas-conhecidos-e-melhorias)
 - [Tempo Gasto](#-tempo-gasto)
-- [Como Executar o Projeto](#-como-executar-o-projeto)
+
+## 🚀 Como Executar o Projeto
+
+### Pré-requisitos
+
+- **Node.js** 20+ e **pnpm** (para build local dos pacotes compartilhados)
+- **Docker Desktop** (ou Docker Engine + Docker Compose)
+- **Git**
+
+### Instalação do pnpm
+
+```bash
+# Via npm
+npm install -g pnpm
+
+# Via Homebrew (macOS)
+brew install pnpm
+
+# Via Corepack (recomendado - já vem com Node.js 16+)
+corepack enable
+corepack prepare pnpm@latest --activate
+```
+
+### Passo a Passo
+
+#### 1. Clone o Repositório
+
+```bash
+git clone git@github.com:veidz/collaborative-task-management.git
+cd collaborative-task-management
+```
+
+#### 2. Instale Dependências e Build dos Pacotes
+
+```bash
+# Instala todas as dependências do monorepo
+pnpm install
+
+# Faz build dos pacotes compartilhados (@packages/types e @packages/utils)
+pnpm --filter @packages/types build
+pnpm --filter @packages/utils build
+```
+
+> **Por que fazer build antes?** Os serviços NestJS importam os pacotes compartilhados (`@packages/types` e `@packages/utils`). O build local garante que os arquivos `.d.ts` e `.js` estejam disponíveis antes de iniciar os containers. Note que `@packages/utils` contém utilitários como logger config e health checks, mas NÃO contém providers/guards/decorators NestJS (que precisam ficar locais por questões de injeção de dependência).
+
+#### 3. Execute o Script de Setup
+
+**⚠️ IMPORTANTE:** Execute este script ANTES do `docker-compose up` para criar os arquivos `.env`:
+
+```bash
+# No Linux/macOS
+./scripts/setup.sh
+
+# No Windows (Git Bash)
+./scripts/setup.sh
+
+# No Windows (PowerShell) - alternativa
+Get-ChildItem -Path apps -Directory | ForEach-Object {
+    $envExample = Join-Path $_.FullName ".env.example"
+    $env = Join-Path $_.FullName ".env"
+    if ((Test-Path $envExample) -and !(Test-Path $env)) {
+        Copy-Item $envExample $env
+        Write-Host "✓ Created $($_.Name)/.env"
+    }
+}
+```
+
+**O que o script faz:**
+
+- Copia `.env.example` para `.env` em cada serviço (`apps/*/`)
+- Pula se o arquivo `.env` já existir
+- Necessário porque o `docker-compose` valida a existência dos arquivos `.env` antes de iniciar
+
+#### 4. Inicie Todos os Serviços com Docker
+
+```bash
+docker-compose up
+```
+
+**O que acontece automaticamente:**
+
+1. ✅ PostgreSQL inicializa e cria os bancos de dados necessários:
+   - `auth_service`
+   - `tasks_service`
+   - `notifications_service`
+2. ✅ RabbitMQ inicia o message broker
+3. ✅ Cada serviço backend:
+   - Usa as dependências já instaladas (via volume mount)
+   - Executa migrations do banco de dados
+   - Inicia em modo desenvolvimento com hot-reload
+4. ✅ API Gateway aguarda todos os serviços estarem saudáveis (health checks)
+5. ✅ Frontend compila e inicia com Vite
+
+**Primeira execução:** Pode levar 5-10 minutos (build das imagens Docker)
+
+**Execuções seguintes:** ~1 minuto (usa cache)
+
+#### 5. Acesse a Aplicação
+
+Aguarde até ver as mensagens de sucesso nos logs. Então acesse:
+
+| Serviço            | URL                            | Credenciais                          |
+| ------------------ | ------------------------------ | ------------------------------------ |
+| **Interface Web**  | http://localhost:3000          | -                                    |
+| **API Gateway**    | http://localhost:3001          | -                                    |
+| **Swagger Docs**   | http://localhost:3001/api/docs | -                                    |
+| **RabbitMQ Admin** | http://localhost:15672         | user: `rabbitmq`<br>pass: `rabbitmq` |
+
+**Para criar uma conta:**
+
+1. Acesse http://localhost:3000
+2. Clique em "Registrar"
+3. Preencha o formulário
+4. Faça login e comece a usar!
+
+### Comandos Úteis
+
+```bash
+# Rebuild dos pacotes após mudanças
+pnpm --filter @packages/types build
+pnpm --filter @packages/utils build
+
+# Limpar arquivos compilados localmente
+pnpm clean
+
+# Iniciar Docker em modo background (detached)
+docker-compose up -d
+
+# Ver logs de todos os serviços
+docker-compose logs -f
+
+# Ver logs de um serviço específico
+docker-compose logs -f api-gateway
+docker-compose logs -f web
+
+# Parar todos os serviços
+docker-compose down
+
+# Parar e REMOVER volumes (limpa banco de dados)
+docker-compose down -v
+
+# Rebuild Docker após mudanças no código ou dependências
+docker-compose up --build
+
+# Rebuild de um serviço específico
+docker-compose up --build tasks-service
+
+# Restart de um serviço
+docker-compose restart notifications-service
+
+# Executar comando dentro de um container
+docker-compose exec tasks-service sh
+docker-compose exec tasks-service pnpm migration:run
+```
+
+### Troubleshooting
+
+#### ❌ Erro: "env file not found"
+
+```bash
+# Execute o script de setup antes do docker-compose up
+./scripts/setup.sh  # ou bash scripts/setup.sh
+
+# Verifique se os arquivos .env foram criados
+ls apps/*/.env
+```
+
+#### ❌ Porta já está em uso
+
+```bash
+# Verifique qual processo está usando a porta
+lsof -i :3000  # ou :3001, :3002, etc (Linux/macOS)
+netstat -ano | findstr :3000  # Windows
+
+# Pare os containers
+docker-compose down
+
+# Ou mude a porta no docker-compose.yml
+```
+
+#### ❌ Serviço não inicia ou fica reiniciando
+
+```bash
+# Veja os logs do serviço
+docker-compose logs -f <nome-do-servico>
+
+# Exemplos comuns:
+# - Arquivo .env não foi criado (execute: ./scripts/setup.sh)
+# - Porta em uso (veja solução acima)
+# - Erro de migration (verifique logs do PostgreSQL)
+```
+
+#### ❌ Erro de conexão com banco de dados
+
+```bash
+# Verifique se o PostgreSQL está rodando
+docker-compose ps postgres
+
+# Veja os logs
+docker-compose logs -f postgres
+
+# Recrie o banco (ATENÇÃO: apaga todos os dados)
+docker-compose down -v
+docker-compose up
+```
+
+#### ❌ Mudanças no código não aparecem
+
+**Backend (NestJS):** Hot-reload automático, mas às vezes precisa rebuild:
+
+```bash
+docker-compose up --build <servico>
+```
+
+**Frontend (Vite):** Hot-reload funciona automaticamente. Se não funcionar:
+
+```bash
+docker-compose restart web
+```
+
+#### 🔄 Resetar Tudo e Começar do Zero
+
+```bash
+# Remove containers, volumes e imagens
+docker-compose down -v --rmi local
+
+# Remove arquivos .env
+rm apps/*/.env
+
+# Execute o setup novamente
+./scripts/setup.sh
+
+# Inicia novamente
+docker-compose up --build
+```
+
+### Verificação de Saúde
+
+Cada serviço expõe um endpoint `/health`:
+
+```bash
+curl http://localhost:3001/health  # API Gateway
+curl http://localhost:3002/health  # Auth Service
+curl http://localhost:3003/health  # Tasks Service
+curl http://localhost:3004/health  # Notifications Service
+```
+
+Resposta esperada: `{"status":"ok"}`
+
+### Estrutura de Portas
+
+| Serviço       | Porta | Descrição       |
+| ------------- | ----- | --------------- |
+| Web           | 3000  | Frontend React  |
+| API Gateway   | 3001  | Gateway central |
+| Auth Service  | 3002  | Autenticação    |
+| Tasks Service | 3003  | Tarefas         |
+| Notifications | 3004  | Notificações    |
+| PostgreSQL    | 5432  | Banco de dados  |
+| RabbitMQ      | 5672  | AMQP            |
+| RabbitMQ UI   | 15672 | Interface web   |
+
+### Variáveis de Ambiente
+
+Cada serviço tem seu próprio arquivo `.env` em `apps/<servico>/.env`, criado pelo script `setup.sh` baseado no `.env.example`.
 
 ## 🏗️ Arquitetura
 
@@ -328,224 +593,3 @@ Uma plataforma de gerenciamento de tarefas baseada em microsserviços com comuni
 - Otimizações: 2h
 
 **Total: ~90 horas (~2 semanas de trabalho)**
-
-## 🚀 Como Executar o Projeto
-
-### Pré-requisitos
-
-- **Node.js** 20+ e **pnpm** (para build local dos pacotes compartilhados)
-- **Docker Desktop** (ou Docker Engine + Docker Compose)
-- **Git**
-
-### Instalação do pnpm
-
-```bash
-# Via npm
-npm install -g pnpm
-
-# Via Homebrew (macOS)
-brew install pnpm
-
-# Via Corepack (recomendado - já vem com Node.js 16+)
-corepack enable
-corepack prepare pnpm@latest --activate
-```
-
-### Passo a Passo
-
-#### 1. Clone o Repositório
-
-```bash
-git clone git@github.com:veidz/collaborative-task-management.git
-cd collaborative-task-management
-```
-
-#### 2. Instale Dependências e Build dos Pacotes
-
-```bash
-# Instala todas as dependências do monorepo
-pnpm install
-
-# Faz build dos pacotes compartilhados (@packages/types e @packages/utils)
-pnpm --filter @packages/types build
-pnpm --filter @packages/utils build
-```
-
-> **Por que fazer build antes?** Os serviços NestJS importam os pacotes compartilhados (`@packages/types` e `@packages/utils`). O build local garante que os arquivos `.d.ts` e `.js` estejam disponíveis antes de iniciar os containers. Note que `@packages/utils` contém utilitários como logger config e health checks, mas NÃO contém providers/guards/decorators NestJS (que precisam ficar locais por questões de injeção de dependência).
-
-#### 3. Inicie Todos os Serviços com Docker
-
-```bash
-docker-compose up
-```
-
-**O que acontece automaticamente:**
-
-1. ✅ Container `setup` cria arquivos `.env` baseado nos `.env.example` de cada serviço
-2. ✅ PostgreSQL inicializa e cria os bancos de dados necessários:
-   - `auth_service`
-   - `tasks_service`
-   - `notifications_service`
-3. ✅ RabbitMQ inicia o message broker
-4. ✅ Cada serviço backend:
-   - Usa as dependências já instaladas (via volume mount)
-   - Executa migrations do banco de dados
-   - Inicia em modo desenvolvimento com hot-reload
-5. ✅ API Gateway aguarda todos os serviços estarem saudáveis (health checks)
-6. ✅ Frontend compila e inicia com Vite
-
-**Primeira execução:** Pode levar 5-10 minutos (build das imagens Docker)
-
-**Execuções seguintes:** ~1 minuto (usa cache)
-
-#### 4. Acesse a Aplicação
-
-Aguarde até ver as mensagens de sucesso nos logs. Então acesse:
-
-| Serviço            | URL                            | Credenciais                          |
-| ------------------ | ------------------------------ | ------------------------------------ |
-| **Interface Web**  | http://localhost:3000          | -                                    |
-| **API Gateway**    | http://localhost:3001          | -                                    |
-| **Swagger Docs**   | http://localhost:3001/api/docs | -                                    |
-| **RabbitMQ Admin** | http://localhost:15672         | user: `rabbitmq`<br>pass: `rabbitmq` |
-
-**Para criar uma conta:**
-
-1. Acesse http://localhost:3000
-2. Clique em "Registrar"
-3. Preencha o formulário
-4. Faça login e comece a usar!
-
-### Comandos Úteis
-
-```bash
-# Rebuild dos pacotes após mudanças
-pnpm --filter @packages/types build
-pnpm --filter @packages/utils build
-
-# Limpar arquivos compilados localmente
-pnpm clean
-
-# Iniciar Docker em modo background (detached)
-docker-compose up -d
-
-# Ver logs de todos os serviços
-docker-compose logs -f
-
-# Ver logs de um serviço específico
-docker-compose logs -f api-gateway
-docker-compose logs -f web
-
-# Parar todos os serviços
-docker-compose down
-
-# Parar e REMOVER volumes (limpa banco de dados)
-docker-compose down -v
-
-# Rebuild Docker após mudanças no código ou dependências
-docker-compose up --build
-
-# Rebuild de um serviço específico
-docker-compose up --build tasks-service
-
-# Restart de um serviço
-docker-compose restart notifications-service
-
-# Executar comando dentro de um container
-docker-compose exec tasks-service sh
-docker-compose exec tasks-service pnpm migration:run
-```
-
-### Troubleshooting
-
-#### ❌ Porta já está em uso
-
-```bash
-# Verifique qual processo está usando a porta
-lsof -i :3000  # ou :3001, :3002, etc
-
-# Pare os containers
-docker-compose down
-
-# Ou mude a porta no docker-compose.yml
-```
-
-#### ❌ Serviço não inicia ou fica reiniciando
-
-```bash
-# Veja os logs do serviço
-docker-compose logs -f <nome-do-servico>
-
-# Exemplos comuns:
-# - Arquivo .env não foi criado (execute: docker-compose up setup)
-# - Porta em uso (veja solução acima)
-# - Erro de migration (verifique logs do PostgreSQL)
-```
-
-#### ❌ Erro de conexão com banco de dados
-
-```bash
-# Verifique se o PostgreSQL está rodando
-docker-compose ps postgres
-
-# Veja os logs
-docker-compose logs -f postgres
-
-# Recrie o banco (ATENÇÃO: apaga todos os dados)
-docker-compose down -v
-docker-compose up
-```
-
-#### ❌ Mudanças no código não aparecem
-
-**Backend (NestJS):** Hot-reload automático, mas às vezes precisa rebuild:
-
-```bash
-docker-compose up --build <servico>
-```
-
-**Frontend (Vite):** Hot-reload funciona automaticamente. Se não funcionar:
-
-```bash
-docker-compose restart web
-```
-
-#### 🔄 Resetar Tudo e Começar do Zero
-
-```bash
-# Remove containers, volumes e imagens
-docker-compose down -v --rmi local
-
-# Inicia novamente
-docker-compose up --build
-```
-
-### Verificação de Saúde
-
-Cada serviço expõe um endpoint `/health`:
-
-```bash
-curl http://localhost:3001/health  # API Gateway
-curl http://localhost:3002/health  # Auth Service
-curl http://localhost:3003/health  # Tasks Service
-curl http://localhost:3004/health  # Notifications Service
-```
-
-Resposta esperada: `{"status":"ok"}`
-
-### Estrutura de Portas
-
-| Serviço       | Porta | Descrição       |
-| ------------- | ----- | --------------- |
-| Web           | 3000  | Frontend React  |
-| API Gateway   | 3001  | Gateway central |
-| Auth Service  | 3002  | Autenticação    |
-| Tasks Service | 3003  | Tarefas         |
-| Notifications | 3004  | Notificações    |
-| PostgreSQL    | 5432  | Banco de dados  |
-| RabbitMQ      | 5672  | AMQP            |
-| RabbitMQ UI   | 15672 | Interface web   |
-
-### Variáveis de Ambiente
-
-Cada serviço tem seu próprio arquivo `.env` em `apps/<servico>/.env`, criado automaticamente pelo container `setup` baseado no `.env.example`.
