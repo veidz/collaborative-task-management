@@ -6,6 +6,17 @@ import { Task } from './entities/task.entity'
 import { TaskAssignment } from './entities/task-assignment.entity'
 import { EventsModule } from '../events/events.module'
 import { ClientsModule } from '../common/clients/clients.module'
+import { TaskMapper } from './mappers/task.mapper'
+import { TaskAuthorizationGuard } from './guards/task-authorization.guard'
+import {
+  CreateTaskUseCase,
+  FindTasksUseCase,
+  FindOneTaskUseCase,
+  UpdateTaskUseCase,
+  DeleteTaskUseCase,
+  AssignUsersUseCase,
+  UnassignUsersUseCase,
+} from './use-cases'
 
 @Module({
   imports: [
@@ -14,7 +25,18 @@ import { ClientsModule } from '../common/clients/clients.module'
     ClientsModule,
   ],
   controllers: [TasksController],
-  providers: [TasksService],
+  providers: [
+    TasksService,
+    TaskMapper,
+    TaskAuthorizationGuard,
+    CreateTaskUseCase,
+    FindTasksUseCase,
+    FindOneTaskUseCase,
+    UpdateTaskUseCase,
+    DeleteTaskUseCase,
+    AssignUsersUseCase,
+    UnassignUsersUseCase,
+  ],
   exports: [TasksService],
 })
 export class TasksModule {}
