@@ -8,6 +8,17 @@ import { NotificationsService } from './notifications.service'
 import { NotificationsRepository } from './notifications.repository'
 import { Notification } from './entities/notification.entity'
 import { JwtStrategy } from '../common/strategies/jwt.strategy'
+import {
+  CreateTaskCreatedNotificationsUseCase,
+  CreateTaskUpdatedNotificationUseCase,
+  CreateTaskDeletedNotificationUseCase,
+  CreateCommentCreatedNotificationUseCase,
+  FindNotificationsByUserUseCase,
+  MarkNotificationAsReadUseCase,
+  MarkAllNotificationsAsReadUseCase,
+  CountUnreadNotificationsUseCase,
+} from './use-cases'
+import { NotificationMapper } from './mappers/notification.mapper'
 
 @Module({
   imports: [
@@ -34,7 +45,22 @@ import { JwtStrategy } from '../common/strategies/jwt.strategy'
     }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationsRepository, JwtStrategy],
+  providers: [
+    NotificationsService,
+    NotificationsRepository,
+    JwtStrategy,
+    // Use Cases
+    CreateTaskCreatedNotificationsUseCase,
+    CreateTaskUpdatedNotificationUseCase,
+    CreateTaskDeletedNotificationUseCase,
+    CreateCommentCreatedNotificationUseCase,
+    FindNotificationsByUserUseCase,
+    MarkNotificationAsReadUseCase,
+    MarkAllNotificationsAsReadUseCase,
+    CountUnreadNotificationsUseCase,
+    // Mapper
+    NotificationMapper,
+  ],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}
