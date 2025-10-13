@@ -22,23 +22,12 @@ export function useAuth() {
   const registerMutation = useMutation({
     mutationFn: (userData: RegisterRequest) => authApi.register(userData),
     onSuccess: async (data) => {
-      console.log('✅ Register response:', data)
-      console.log('📦 Data structure:', {
-        hasUser: !!data.user,
-        hasAccessToken: !!data.accessToken,
-        hasRefreshToken: !!data.refreshToken,
-      })
       setAuth(data.user, data.accessToken, data.refreshToken)
-      console.log('💾 Auth set, checking localStorage:')
-      console.log('  - user:', localStorage.getItem('user'))
-      console.log('  - accessToken:', localStorage.getItem('accessToken'))
-      console.log('  - refreshToken:', localStorage.getItem('refreshToken'))
       queryClient.invalidateQueries({ queryKey: ['profile'] })
 
       // Pequeno delay para garantir que localStorage seja persistido
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      console.log('🚀 Navigating to /tasks...')
       navigate({ to: '/tasks' })
     },
   })

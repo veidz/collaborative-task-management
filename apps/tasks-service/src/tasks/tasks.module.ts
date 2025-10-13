@@ -37,6 +37,6 @@ import {
     AssignUsersUseCase,
     UnassignUsersUseCase,
   ],
-  exports: [TasksService],
+  exports: [TasksService, TaskAuthorizationGuard],
 })
 export class TasksModule {}
