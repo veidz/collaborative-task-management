@@ -2,8 +2,6 @@ export enum TaskEventPattern {
   TASK_CREATED = 'task.created',
   TASK_UPDATED = 'task.updated',
   TASK_DELETED = 'task.deleted',
-  TASK_ASSIGNED = 'task.assigned',
-  TASK_UNASSIGNED = 'task.unassigned',
   COMMENT_CREATED = 'task.comment.created',
 }
 
@@ -36,20 +34,6 @@ export interface TaskDeletedEvent {
   taskId: string
   deletedById: string
   deletedAt: Date
-}
-
-export interface TaskAssignedEvent {
-  taskId: string
-  assignedUserIds: string[]
-  assignedBy: string
-  assignedAt: Date
-}
-
-export interface TaskUnassignedEvent {
-  taskId: string
-  unassignedUserIds: string[]
-  unassignedBy: string
-  unassignedAt: Date
 }
 
 export interface CommentCreatedEvent {

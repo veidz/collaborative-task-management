@@ -3,7 +3,5 @@ export {
   TaskCreatedEvent,
   TaskUpdatedEvent,
   TaskDeletedEvent,
-  TaskAssignedEvent,
-  TaskUnassignedEvent,
   CommentCreatedEvent,
 } from '@packages/types'

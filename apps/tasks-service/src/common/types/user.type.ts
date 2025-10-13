@@ -1,1 +1,1 @@
-export { UserPayload } from '@packages/types'
+export { CurrentUserData as UserPayload } from '@packages/types'

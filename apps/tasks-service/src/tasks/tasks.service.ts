@@ -391,13 +391,6 @@ export class TasksService {
 
     if (newUserIds.length > 0) {
       await this.assignUsersInternal(id, newUserIds, userId, true)
-
-      await this.eventsPublisher.publishTaskAssigned({
-        taskId: id,
-        assignedUserIds: newUserIds,
-        assignedBy: userId,
-        assignedAt: new Date(),
-      })
     }
 
     const updatedTask = await this.tasksRepository.findOne({
@@ -442,13 +435,6 @@ export class TasksService {
     await this.assignmentsRepository.delete({
       taskId: id,
       userId: In(unassignUsersDto.userIds),
-    })
-
-    await this.eventsPublisher.publishTaskUnassigned({
-      taskId: id,
-      unassignedUserIds: unassignUsersDto.userIds,
-      unassignedBy: userId,
-      unassignedAt: new Date(),
     })
 
     const updatedTask = await this.tasksRepository.findOne({

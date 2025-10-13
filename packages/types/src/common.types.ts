@@ -1,9 +1,6 @@
-export interface ApiError {
-  statusCode: number
-  message: string
-  error: string
-  timestamp: string
-  path: string
+export interface PaginatedResponse<T> {
+  data: T[]
+  meta: PaginationMeta
 }
 
 export interface PaginationMeta {
@@ -11,9 +8,4 @@ export interface PaginationMeta {
   page: number
   limit: number
   totalPages: number
-}
-
-export interface PaginatedResponse<T> {
-  data: T[]
-  meta: PaginationMeta
 }
