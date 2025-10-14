@@ -6,7 +6,7 @@ export const createTaskSchema = z.object({
     .string()
     .min(3, 'Title must be at least 3 characters')
     .max(255, 'Title must be less than 255 characters'),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   status: z.nativeEnum(TaskStatus).default(TaskStatus.TODO),
   priority: z.nativeEnum(TaskPriority).default(TaskPriority.MEDIUM),
   deadline: z.string().optional(),
@@ -19,7 +19,7 @@ export const updateTaskSchema = z.object({
     .min(3, 'Title must be at least 3 characters')
     .max(255, 'Title must be less than 255 characters')
     .optional(),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(TaskPriority).optional(),
   deadline: z.string().optional(),

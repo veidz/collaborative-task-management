@@ -34,19 +34,29 @@ interface EditTaskModalProps {
   task: Task
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
 }
 
 export function EditTaskModal({
   task,
   open,
   onOpenChange,
+  onSuccess,
 }: EditTaskModalProps) {
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus>(task.status)
   const [selectedPriority, setSelectedPriority] = useState<TaskPriority>(
     task.priority,
   )
+
+  const getAssigneeIds = (task: Task): string[] => {
+    if (task.assignees && task.assignees.length > 0) {
+      return task.assignees.map((a) => a.id)
+    }
+    return Array.isArray(task.assigneeIds) ? task.assigneeIds : []
+  }
+
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>(
-    Array.isArray(task.assigneeIds) ? task.assigneeIds : [],
+    getAssigneeIds(task),
   )
 
   const { mutate: updateTask, isPending, error } = useUpdateTask(task.id)
@@ -74,9 +84,7 @@ export function EditTaskModal({
     if (open) {
       setSelectedStatus(task.status)
       setSelectedPriority(task.priority)
-      setSelectedAssignees(
-        Array.isArray(task.assigneeIds) ? task.assigneeIds : [],
-      )
+      setSelectedAssignees(getAssigneeIds(task))
       reset({
         title: task.title,
         description: task.description,
@@ -88,21 +96,36 @@ export function EditTaskModal({
   }, [open, task, reset])
 
   const onSubmit = (data: UpdateTaskFormData) => {
-    updateTask(
-      {
-        title: data.title,
-        description: data.description,
-        status: selectedStatus,
-        priority: selectedPriority,
-        deadline: data.deadline || undefined,
-        assigneeIds: selectedAssignees,
+    const updateData = {
+      title: data.title,
+      description: data.description === '' ? null : data.description,
+      status: selectedStatus,
+      priority: selectedPriority,
+      deadline: data.deadline || undefined,
+      assigneeIds: selectedAssignees,
+    }
+
+    console.log('===== EDIT TASK DEBUG =====')
+    console.log('Current task assignees:', task.assignees)
+    console.log('Current task assigneeIds:', task.assigneeIds)
+    console.log('Selected assignees (state):', selectedAssignees)
+    console.log('Updating task with data:', updateData)
+    console.log('===========================')
+
+    updateTask(updateData, {
+      onSuccess: (response) => {
+        console.log('===== UPDATE SUCCESS =====')
+        console.log('Response from update:', response)
+        console.log('===========================')
+        onSuccess?.()
+        onOpenChange(false)
       },
-      {
-        onSuccess: () => {
-          onOpenChange(false)
-        },
+      onError: (error) => {
+        console.error('===== UPDATE ERROR =====')
+        console.error('Error:', error)
+        console.error('===========================')
       },
-    )
+    })
   }
 
   const handleClose = () => {

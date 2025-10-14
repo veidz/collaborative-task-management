@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsArray,
   IsUUID,
+  ValidateIf,
 } from 'class-validator'
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { TaskStatus } from '../../enums/task-status.enum'
@@ -24,10 +25,12 @@ export class UpdateTaskDto {
   @ApiPropertyOptional({
     description: 'Task description',
     example: 'Implement JWT-based authentication with refresh tokens',
+    nullable: true,
   })
+  @ValidateIf((o) => o.description !== null && o.description !== undefined)
   @IsString()
   @IsOptional()
-  description?: string
+  description?: string | null
 
   @ApiPropertyOptional({
     description: 'Task status',

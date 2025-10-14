@@ -50,9 +50,10 @@ export class FindTasksUseCase {
     const queryBuilder = this.tasksRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.assignments', 'assignment')
-      .where('(task.createdBy = :userId OR assignment.userId = :userId)', {
-        userId,
-      })
+      .where(
+        '(task.createdBy = :userId OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = task.id AND ta.user_id = :userId))',
+        { userId },
+      )
       .orderBy('task.createdAt', 'DESC')
       .skip(skip)
       .take(limit)
@@ -66,11 +67,17 @@ export class FindTasksUseCase {
     }
 
     if (assignedToMe) {
-      queryBuilder.andWhere('assignment.userId = :userId', { userId })
+      queryBuilder.andWhere(
+        'EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = task.id AND ta.user_id = :userId)',
+        { userId },
+      )
     }
 
     if (assignedTo) {
-      queryBuilder.andWhere('assignment.userId = :assignedTo', { assignedTo })
+      queryBuilder.andWhere(
+        'EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = task.id AND ta.user_id = :assignedTo)',
+        { assignedTo },
+      )
     }
 
     return queryBuilder

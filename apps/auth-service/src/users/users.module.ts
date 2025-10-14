@@ -17,11 +17,9 @@ import { UserMapper } from '../auth/mappers/user.mapper'
   providers: [
     UsersService,
     UsersRepository,
-    // Use Cases
     ValidateUsersUseCase,
     FindAllUsersUseCase,
     FindUserByIdUseCase,
-    // Mappers
     UserMapper,
   ],
   exports: [UsersService, UsersRepository, TypeOrmModule, UserMapper],

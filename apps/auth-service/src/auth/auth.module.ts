@@ -43,12 +43,10 @@ import { PasswordHasher } from './utils/password-hasher'
   providers: [
     AuthService,
     JwtStrategy,
-    // Use Cases
     RegisterUseCase,
     LoginUseCase,
     RefreshTokenUseCase,
     GetProfileUseCase,
-    // Utils
     TokenGenerator,
     PasswordHasher,
   ],

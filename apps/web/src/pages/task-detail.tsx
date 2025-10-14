@@ -217,6 +217,10 @@ export function TaskDetailPage() {
         task={task}
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
+        onSuccess={() => {
+          refetchTask()
+          refetchComments()
+        }}
       />
 
       <DeleteTaskDialog

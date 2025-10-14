@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Task } from '../entities/task.entity'
+import { TaskAssignment } from '../entities/task-assignment.entity'
 import { UpdateTaskDto } from '../dto/requests'
 import { TaskResponseDto } from '../dto/responses'
 import { EventsPublisherService } from '../../events/events-publisher.service'
@@ -33,9 +34,15 @@ export class UpdateTaskUseCase {
     userId: string,
   ): Promise<TaskResponseDto> {
     this.logger.log(`Updating task ${id} for user: ${userId}`)
+    this.logger.log(
+      `Update DTO assigneeIds: ${JSON.stringify(updateTaskDto.assigneeIds)}`,
+    )
 
     const task = await this.authGuard.findTaskOrFail(id)
     this.authGuard.ensureUserCanModify(task, userId)
+
+    const currentAssignees = task.assignments?.map((a) => a.userId) || []
+    this.logger.log(`Current assignees: ${JSON.stringify(currentAssignees)}`)
 
     const { changes, assigneeIds } = await this.applyUpdates(
       task,
@@ -47,6 +54,8 @@ export class UpdateTaskUseCase {
       this.logger.log(`No changes detected for task ${id}`)
       return this.taskMapper.toResponseDto(task)
     }
+
+    task.assignments = []
 
     const updatedTask = await this.tasksRepository.save(task)
     const taskWithAssignees = await this.fetchTaskWithAssignees(id)
@@ -155,17 +164,26 @@ export class UpdateTaskUseCase {
     userId: string,
     changes: string[],
   ): Promise<string[] | undefined> {
+    this.logger.log(
+      `applyAssigneeUpdates - taskId: ${taskId}, current: ${JSON.stringify(currentAssigneeIds)}, new: ${JSON.stringify(newAssigneeIds)}`,
+    )
+
     if (newAssigneeIds === undefined) {
+      this.logger.log('newAssigneeIds is undefined, skipping update')
       return undefined
     }
 
     const uniqueNewIds = [...new Set(newAssigneeIds)]
+    this.logger.log(`uniqueNewIds: ${JSON.stringify(uniqueNewIds)}`)
 
     if (uniqueNewIds.length > 0) {
       await this.validateUserIds(uniqueNewIds)
     }
 
     if (this.hasAssigneesChanged(currentAssigneeIds, uniqueNewIds)) {
+      this.logger.log(
+        `Assignees changed! Updating from [${currentAssigneeIds.join(', ')}] to [${uniqueNewIds.join(', ')}]`,
+      )
       await this.updateAssignments(taskId, uniqueNewIds, userId)
       changes.push('assignees')
 
@@ -205,8 +223,21 @@ export class UpdateTaskUseCase {
     newAssigneeIds: string[],
     userId: string,
   ): Promise<void> {
+    this.logger.log(
+      `updateAssignments - Deleting all assignments for task ${taskId}`,
+    )
+
     await this.tasksRepository.manager.transaction(async (manager) => {
-      await manager.delete('task_assignments', { taskId })
+      const deleteResult = await manager
+        .createQueryBuilder()
+        .delete()
+        .from(TaskAssignment)
+        .where('task_id = :taskId', { taskId })
+        .execute()
+
+      this.logger.log(
+        `Deleted ${deleteResult.affected || 0} assignments for task ${taskId}`,
+      )
 
       if (newAssigneeIds.length > 0) {
         const assignments = newAssigneeIds.map((assigneeId) => ({
@@ -215,10 +246,14 @@ export class UpdateTaskUseCase {
           assignedBy: userId,
         }))
 
+        this.logger.log(
+          `Inserting ${assignments.length} new assignments for task ${taskId}`,
+        )
+
         await manager
           .createQueryBuilder()
           .insert()
-          .into('task_assignments')
+          .into(TaskAssignment)
           .values(assignments)
           .execute()
       }
@@ -242,7 +277,7 @@ export class UpdateTaskUseCase {
     await this.eventsPublisher.publishTaskUpdated({
       taskId: task.id,
       title: updateTaskDto.title,
-      description: updateTaskDto.description,
+      description: updateTaskDto.description ?? undefined,
       status: updateTaskDto.status,
       priority: updateTaskDto.priority,
       deadline: updateTaskDto.deadline

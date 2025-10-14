@@ -49,7 +49,6 @@ import { NotificationMapper } from './mappers/notification.mapper'
     NotificationsService,
     NotificationsRepository,
     JwtStrategy,
-    // Use Cases
     CreateTaskCreatedNotificationsUseCase,
     CreateTaskUpdatedNotificationUseCase,
     CreateTaskDeletedNotificationUseCase,
@@ -58,7 +57,6 @@ import { NotificationMapper } from './mappers/notification.mapper'
     MarkNotificationAsReadUseCase,
     MarkAllNotificationsAsReadUseCase,
     CountUnreadNotificationsUseCase,
-    // Mapper
     NotificationMapper,
   ],
   exports: [NotificationsService],

@@ -45,9 +45,7 @@ export class Task {
   @Column('uuid', { name: 'createdById' })
   createdBy: string
 
-  @OneToMany(() => TaskAssignment, (assignment) => assignment.task, {
-    cascade: true,
-  })
+  @OneToMany(() => TaskAssignment, (assignment) => assignment.task)
   assignments: TaskAssignment[]
 
   @CreateDateColumn({ name: 'createdAt' })

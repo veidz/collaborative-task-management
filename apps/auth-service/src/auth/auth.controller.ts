@@ -139,8 +139,6 @@ export class AuthController {
     description: 'User successfully logged out',
   })
   async logout(): Promise<{ message: string }> {
-    // For now, logout is handled on the client side by clearing tokens
-    // In the future, we could implement token blacklisting here
     this.logger.log('Logout request received')
     return { message: 'Logged out successfully' }
   }

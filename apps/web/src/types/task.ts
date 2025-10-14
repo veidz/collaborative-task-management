@@ -48,7 +48,7 @@ export interface CreateTaskRequest {
 
 export interface UpdateTaskRequest {
   title?: string
-  description?: string
+  description?: string | null
   status?: TaskStatus
   priority?: TaskPriority
   deadline?: string

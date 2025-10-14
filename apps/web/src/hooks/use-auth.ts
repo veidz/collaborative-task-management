@@ -25,7 +25,6 @@ export function useAuth() {
       setAuth(data.user, data.accessToken, data.refreshToken)
       queryClient.invalidateQueries({ queryKey: ['profile'] })
 
-      // Pequeno delay para garantir que localStorage seja persistido
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       navigate({ to: '/tasks' })
